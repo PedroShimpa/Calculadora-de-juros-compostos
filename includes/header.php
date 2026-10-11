@@ -8,49 +8,56 @@ declare(strict_types=1);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
-    <!-- Título SEO -->
-    <title>Calculadora de Juros Compostos [Cálculos Financeiros] &#8211; Pedro Falconi</title>
-    
-    <!-- Meta Tags SEO Principais -->
-    <meta name="description" content="Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado. Ferramenta gratuita desenvolvida por Pedro Falconi.">
-    <meta name="keywords" content="calculadora juros compostos, juros sobre juros, simulador de investimentos, simulador de aposentadoria, renda fixa, cdb, tesouro direto, pedro falconi, projeto open source">
-    <meta name="author" content="Pedro Falconi">
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
-    <link rel="canonical" href="http://localhost/calculadora-juros-compostos/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:locale" content="pt_BR">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Calculadora de Juros Compostos [Cálculos Financeiros] - Pedro Falconi">
-    <meta property="og:description" content="Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado.">
-    <meta property="og:url" content="http://localhost/calculadora-juros-compostos/">
-    <meta property="og:site_name" content="Calculadora de Juros Compostos - Pedro Falconi">
+  <!-- Título SEO -->
+  <title>Calculadora de Juros Compostos [Cálculos Financeiros] &#8211; Pedro Falconi</title>
 
-    <!-- Twitter Cards -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Calculadora de Juros Compostos [Cálculos Financeiros] - Pedro Falconi">
-    <meta name="twitter:description" content="Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado.">
-    <meta name="twitter:creator" content="@pedrofalconi">
+  <!-- Meta Tags SEO Principais -->
+  <meta name="description"
+    content="Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado. Ferramenta gratuita desenvolvida por Pedro Falconi.">
+  <meta name="keywords"
+    content="calculadora juros compostos, juros sobre juros, simulador de investimentos, simulador de aposentadoria, renda fixa, cdb, tesouro direto, pedro falconi, projeto open source">
+  <meta name="author" content="Pedro Falconi">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <link rel="canonical" href="http://localhost/calculadora-juros-compostos/">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Open Graph / Facebook -->
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Calculadora de Juros Compostos [Cálculos Financeiros] - Pedro Falconi">
+  <meta property="og:description"
+    content="Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado.">
+  <meta property="og:url" content="http://localhost/calculadora-juros-compostos/">
+  <meta property="og:site_name" content="Calculadora de Juros Compostos - Pedro Falconi">
 
-    <!-- Bootstrap 5.3 & Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Calculadora de Juros Compostos [Cálculos Financeiros] - Pedro Falconi">
+  <meta name="twitter:description"
+    content="Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado.">
+  <meta name="twitter:creator" content="@pedrofalconi">
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/style.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
 
-    <!-- Schema.org JSON-LD (Web Application & FAQPage) -->
-    <script type="application/ld+json">
+  <!-- Bootstrap 5.3 & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <!-- Schema.org JSON-LD (Web Application & FAQPage) -->
+  <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
@@ -66,7 +73,7 @@ declare(strict_types=1);
           "author": {
             "@type": "Person",
             "name": "Pedro Falconi",
-            "url": "https://github.com/pedrofalconi"
+            "url": "https://github.com/pedroShimpa"
           },
           "offers": {
             "@type": "Offer",
@@ -118,28 +125,33 @@ declare(strict_types=1);
     }
     </script>
 </head>
+
 <body>
 
-    <!-- Navegação Superior -->
-    <nav class="navbar navbar-expand-lg navbar-custom">
-        <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="index.php">
-                <span class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle" style="width: 36px; height: 36px;">
-                    <i class="bi bi-graph-up-arrow"></i>
-                </span>
-                <span>Juros Compostos</span>
-                <span class="brand-badge ms-1">PRO</span>
-            </a>
+  <!-- Navegação Superior -->
+  <nav class="navbar navbar-expand-lg navbar-custom">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-decoration-none" href="index.php">
+        <span class="d-inline-flex align-items-center justify-content-center bg-success text-white rounded-circle"
+          style="width: 36px; height: 36px;">
+          <i class="bi bi-graph-up-arrow"></i>
+        </span>
+        <span>Juros Compostos</span>
+        <span class="brand-badge ms-1">PRO</span>
+      </a>
 
-            <div class="d-flex align-items-center gap-2 ms-auto">
-                <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex align-items-center gap-1 rounded-pill px-3">
-                    <i class="bi bi-github"></i>
-                    <span>Open Source</span>
-                </a>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <a href="https://github.com/PedroShimpa/Calculadora-de-juros-compostos" target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-sm btn-outline-secondary d-none d-sm-inline-flex align-items-center gap-1 rounded-pill px-3">
+          <i class="bi bi-github"></i>
+          <span>Open Source</span>
+        </a>
 
-                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" id="themeToggle" type="button" title="Alternar Modo Claro / Escuro" style="width: 38px; height: 38px;">
-                    <i class="bi bi-moon-stars-fill"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
+        <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+          id="themeToggle" type="button" title="Alternar Modo Claro / Escuro" style="width: 38px; height: 38px;">
+          <i class="bi bi-moon-stars-fill"></i>
+        </button>
+      </div>
+    </div>
+  </nav>

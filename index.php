@@ -32,6 +32,26 @@ $calculator = new CompoundInterestCalculator(
 $serverSimulation = $calculator->calculate();
 $summary = $serverSimulation['summary'];
 
+// Obter taxas em tempo real (cache ou padrão inicial)
+$cacheFile = sys_get_temp_dir() . '/calc_taxas_cache.json';
+$taxasData = [
+    'SELIC' => ['nome' => 'Selic', 'valor' => 13.75],
+    'CDI'   => ['nome' => 'CDI', 'valor' => 13.65],
+    'IPCA'  => ['nome' => 'IPCA', 'valor' => 4.58]
+];
+if (file_exists($cacheFile)) {
+    $c = @file_get_contents($cacheFile);
+    if ($c) {
+        $decoded = json_decode($c, true);
+        if (is_array($decoded)) {
+            $taxasData = array_merge($taxasData, $decoded);
+        }
+    }
+}
+$selicRate = $taxasData['SELIC']['valor'] ?? 13.75;
+$cdiRate = $taxasData['CDI']['valor'] ?? 13.65;
+$ipcaRate = $taxasData['IPCA']['valor'] ?? 4.58;
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -50,6 +70,48 @@ require_once __DIR__ . '/includes/header.php';
             Calcule quanto seu dinheiro rende com juros sobre juros e aportes mensais. Veja a evolução ano a ano e descubra o quanto o tempo pesa no resultado.
         </p>
     </header>
+
+    <!-- Barra de Indicadores Oficiais em Tempo Real (BrasilAPI) -->
+    <div class="rates-bar calc-card p-3 mb-4 shadow-sm" id="liveRatesContainer">
+        <div class="row g-3 align-items-center">
+            <div class="col-lg-3 col-md-12 d-flex align-items-center gap-2">
+                <span class="live-dot" title="Dados atualizados em tempo real via BrasilAPI"></span>
+                <div>
+                    <strong class="d-block small text-uppercase text-muted" style="letter-spacing: 0.05em;">Taxas em Tempo Real</strong>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                        <i class="bi bi-broadcast me-1"></i>Fonte: BrasilAPI
+                    </span>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-4">
+                <div class="rate-badge-card d-flex align-items-center justify-content-between p-2 px-3 rounded-3" data-apply-rate="<?php echo htmlspecialchars((string)$selicRate); ?>" data-apply-name="SELIC" title="Clique para simular com a Taxa Selic">
+                    <div>
+                        <span class="text-muted small fw-semibold">SELIC (Meta)</span>
+                        <strong class="d-block fs-5 text-success" id="rateSelicVal"><?php echo number_format($selicRate, 2, ',', '.'); ?>% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small></strong>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-0 small" style="font-size: 0.72rem;">Usar</button>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-4">
+                <div class="rate-badge-card d-flex align-items-center justify-content-between p-2 px-3 rounded-3" data-apply-rate="<?php echo htmlspecialchars((string)$cdiRate); ?>" data-apply-name="CDI" title="Clique para simular com a Taxa CDI">
+                    <div>
+                        <span class="text-muted small fw-semibold">CDI (Interbancário)</span>
+                        <strong class="d-block fs-5 text-primary" id="rateCdiVal"><?php echo number_format($cdiRate, 2, ',', '.'); ?>% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small></strong>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 small" style="font-size: 0.72rem;">Usar</button>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-4">
+                <div class="rate-badge-card d-flex align-items-center justify-content-between p-2 px-3 rounded-3" title="IPCA - Inflação Oficial acumulada (IBGE)">
+                    <div>
+                        <span class="text-muted small fw-semibold">IPCA (Inflação 12m)</span>
+                        <strong class="d-block fs-5 text-warning" id="rateIpcaVal"><?php echo number_format($ipcaRate, 2, ',', '.'); ?>% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small></strong>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small" style="font-size: 0.7rem;">IBGE</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Grid Principal da Ferramenta -->
     <div class="row g-4 mb-5">
@@ -110,8 +172,9 @@ require_once __DIR__ . '/includes/header.php';
                             <span class="input-group-text">%</span>
                         </div>
                         <div class="d-flex flex-wrap gap-1 mt-2">
+                            <span class="preset-badge" data-preset-rate="<?php echo htmlspecialchars((string)$selicRate); ?>" data-preset-type="yearly" id="presetSelicBadge"><i class="bi bi-broadcast text-success me-1"></i>Selic Atual (<?php echo number_format($selicRate, 2, ',', '.'); ?>%)</span>
+                            <span class="preset-badge" data-preset-rate="<?php echo htmlspecialchars((string)$cdiRate); ?>" data-preset-type="yearly" id="presetCdiBadge"><i class="bi bi-broadcast text-primary me-1"></i>CDI Atual (<?php echo number_format($cdiRate, 2, ',', '.'); ?>%)</span>
                             <span class="preset-badge" data-preset-rate="6.0" data-preset-type="yearly">Poupança (6% a.a.)</span>
-                            <span class="preset-badge" data-preset-rate="10.5" data-preset-type="yearly">CDB / CDI (10,5% a.a.)</span>
                             <span class="preset-badge" data-preset-rate="12.0" data-preset-type="yearly">Ações/FIIs (12% a.a.)</span>
                             <span class="preset-badge" data-preset-rate="1.0" data-preset-type="monthly">1% ao mês</span>
                         </div>

@@ -624,8 +624,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Carregar Taxas em Tempo Real via BrasilAPI
+    async function loadLiveRates() {
+        try {
+            let res = await fetch('api/taxas.php');
+            if (!res.ok) {
+                res = await fetch('https://brasilapi.com.br/api/taxas/v1');
+            }
+            const json = await res.json();
+            const ratesData = json.data || {};
+            
+            let selic = 13.75, cdi = 13.65, ipca = 4.58;
+            if (Array.isArray(json)) {
+                json.forEach(item => {
+                    const k = item.nome?.toUpperCase();
+                    if (k === 'SELIC') selic = Number(item.valor);
+                    if (k === 'CDI') cdi = Number(item.valor);
+                    if (k === 'IPCA') ipca = Number(item.valor);
+                });
+            } else if (ratesData) {
+                if (ratesData.SELIC) selic = Number(ratesData.SELIC.valor);
+                if (ratesData.CDI) cdi = Number(ratesData.CDI.valor);
+                if (ratesData.IPCA) ipca = Number(ratesData.IPCA.valor);
+            }
+
+            // Atualizar valores visuais na barra superior
+            const rateSelicVal = document.getElementById('rateSelicVal');
+            const rateCdiVal = document.getElementById('rateCdiVal');
+            const rateIpcaVal = document.getElementById('rateIpcaVal');
+            if (rateSelicVal) rateSelicVal.innerHTML = `${selic.toFixed(2).replace('.', ',')}% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small>`;
+            if (rateCdiVal) rateCdiVal.innerHTML = `${cdi.toFixed(2).replace('.', ',')}% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small>`;
+            if (rateIpcaVal) rateIpcaVal.innerHTML = `${ipca.toFixed(2).replace('.', ',')}% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small>`;
+
+            // Atualizar atributos de dados nos cards
+            document.querySelectorAll('[data-apply-name="SELIC"]').forEach(el => el.setAttribute('data-apply-rate', selic));
+            document.querySelectorAll('[data-apply-name="CDI"]').forEach(el => el.setAttribute('data-apply-rate', cdi));
+
+            // Atualizar badges de presets rápidos
+            const presetSelicBadge = document.getElementById('presetSelicBadge');
+            if (presetSelicBadge) {
+                presetSelicBadge.setAttribute('data-preset-rate', selic);
+                presetSelicBadge.innerHTML = `<i class="bi bi-broadcast text-success me-1"></i>Selic Atual (${selic.toFixed(2).replace('.', ',')}%)`;
+            }
+
+            const presetCdiBadge = document.getElementById('presetCdiBadge');
+            if (presetCdiBadge) {
+                presetCdiBadge.setAttribute('data-preset-rate', cdi);
+                presetCdiBadge.innerHTML = `<i class="bi bi-broadcast text-primary me-1"></i>CDI Atual (${cdi.toFixed(2).replace('.', ',')}%)`;
+            }
+        } catch (e) {
+            console.warn('BrasilAPI fallback ativo:', e);
+        }
+    }
+
+    // Clique nos cards de taxas para aplicar diretamente na simulação
+    document.querySelectorAll('.rate-badge-card[data-apply-rate]').forEach(card => {
+        card.addEventListener('click', () => {
+            const rate = card.getAttribute('data-apply-rate');
+            if (rate) {
+                rateInput.value = rate;
+                const yearlyRadio = document.querySelector('input[name="rateType"][value="yearly"]');
+                if (yearlyRadio) yearlyRadio.checked = true;
+                calculateAndRender();
+
+                card.classList.add('border-success', 'shadow');
+                setTimeout(() => card.classList.remove('border-success', 'shadow'), 700);
+            }
+        });
+    });
+
     // Inicialização
     initTheme();
     loadFromURL();
+    loadLiveRates();
     calculateAndRender();
 });
+

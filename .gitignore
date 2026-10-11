@@ -1,0 +1,13 @@
+# Vercel
+.vercel/
+
+# Caches e temporários
+cache/
+dist/
+scratch/
+*.tmp
+*.log
+
+# SO
+.DS_Store
+Thumbs.db

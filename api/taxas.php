@@ -10,11 +10,8 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
-$cacheDir = __DIR__ . '/../cache';
-if (!is_dir($cacheDir)) {
-    @mkdir($cacheDir, 0777, true);
-}
-$cacheFile = $cacheDir . '/taxas.json';
+$cacheDir = sys_get_temp_dir();
+$cacheFile = $cacheDir . '/calc_taxas_cache.json';
 $cacheTime = 3600; // 1 hora de cache
 
 $cachedData = null;

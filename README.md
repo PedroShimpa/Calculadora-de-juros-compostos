@@ -4,7 +4,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4.svg?logo=php&logoColor=white)](https://www.php.net/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3.svg?logo=bootstrap&logoColor=white)](https://getbootstrap.com/)
 [![Chart.js](https://img.shields.io/badge/Chart.js-4.4-FF6384.svg?logo=chartdotjs&logoColor=white)](https://www.chartjs.org/)
-[![Open Source](https://img.shields.io/badge/Open%20Source-Pedro%20Falconi-blue.svg)](https://github.com/pedrofalconi)
+[![Open Source](https://img.shields.io/badge/Open%20Source-Pedro%20Falconi-blue.svg)](https://github.com/pedroShimpa)
 
 > Uma calculadora moderna, intuitiva e de alta precisão para simulação de **juros sobre juros**, aportes recorrentes e planejamento de independência financeira.
 
@@ -16,6 +16,7 @@ Inspirado pedagogicamente na ferramenta de referência do **[Investidor Sardinha
 ## 🚀 Funcionalidades Principais
 
 - ⚡ **Cálculos em Tempo Real (0ms de latência)**: Feedback instantâneo conforme você digita os parâmetros ou seleciona presets rápidos.
+- 🇧🇷 **Indicadores Oficiais em Tempo Real (BrasilAPI)**: Integração com a [BrasilAPI](https://brasilapi.com.br/docs#tag/TAXAS) para exibição e aplicação com 1 clique das taxas **SELIC**, **CDI** e **IPCA** com cache inteligente.
 - 🎯 **Equivalência Geométrica Precisa**: Conversão rigorosa de taxas anuais em mensais através da fórmula $(1 + i_{ano})^{1/12} - 1$ (ex.: 12% a.a. = 0,95% a.m., 1% a.m. = 12,68% a.a.).
 - 📊 **Gráficos Interativos (Chart.js 4)**: Visualização em barras empilhadas e evolução patrimonial comparando o esforço de aportes próprios versus os rendimentos acumulados gerados pelos juros.
 - 📅 **Tabelas de Evolução Completa**: Visualização anual resumida e tabela mês a mês detalhada.
@@ -67,6 +68,12 @@ Inspirado pedagogicamente na ferramenta de referência do **[Investidor Sardinha
    ```
 3. Acesse `http://localhost:8000` no seu navegador.
 
+### Opção 3: Publicação em Nuvem no Vercel
+O projeto já conta com o arquivo `vercel.json` configurado:
+- **Pelo GitHub:** Conecte o repositório na plataforma [vercel.com](https://vercel.com) e clique em **Deploy**.
+- **Pela linha de comando:** Execute `npx vercel` na raiz do projeto.
+- Consulte o guia completo passo a passo em [VERCEL.md](VERCEL.md).
+
 ---
 
 ## 📐 Fórmulas Financeiras Utilizadas
@@ -89,5 +96,5 @@ Onde:
 ## 👤 Autor
 
 Desenvolvido por **Pedro Falconi**  
-- **GitHub**: [@pedrofalconi](https://github.com/pedrofalconi)
+- **GitHub**: [@pedrofalconi](https://github.com/pedroShimpa)
 - **Projeto**: Open Source licenciado sob a [Licença MIT](LICENSE)

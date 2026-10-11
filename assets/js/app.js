@@ -250,7 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function calculateAndRender() {
+    function calculateAndRender(options = {}) {
+        const allowConfetti = options.allowConfetti === true;
         const initialVal = parseBRL(initialInput.value);
         const monthlyVal = parseBRL(monthlyInput.value);
         const rateVal = parseBRL(rateInput.value);
@@ -270,14 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = simulate(initialVal, monthlyVal, rateVal, rateType, periodVal, periodType, onlyNet, 15.0, currentIpcaRate);
         lastSimulationResult = result;
 
-        renderSummary(result.summary);
+        renderSummary(result.summary, allowConfetti);
         renderChart(result);
         renderTables(result);
         updateWithdrawalModalData(result);
         updateURLParams(result.parameters);
     }
 
-    function renderSummary(summary) {
+    function renderSummary(summary, allowConfetti = false) {
         kpiFinalBalance.textContent = formatCurrency(summary.finalBalance);
         kpiTotalInvested.textContent = formatCurrency(summary.totalInvested);
         kpiTotalInterest.textContent = formatCurrency(summary.totalInterest);
@@ -291,14 +292,13 @@ document.addEventListener('DOMContentLoaded', () => {
             barInterest.style.width = `${summary.interestPercentage}%`;
         }
 
-        // Se passar de R$ 100.000, soltar celebração confetti se biblioteca estiver disponível
-        if (summary.finalBalance >= 100000 && typeof confetti === 'function' && !window.confettiFired) {
+        // Se passar de R$ 100.000 e for uma ação explícita de cálculo, soltar celebração confetti
+        if (allowConfetti && summary.finalBalance >= 100000 && typeof confetti === 'function') {
             confetti({
                 particleCount: 50,
                 spread: 60,
                 origin: { y: 0.6 }
             });
-            window.confettiFired = true;
         }
     }
 
@@ -625,7 +625,6 @@ document.addEventListener('DOMContentLoaded', () => {
             periodInput.value = '20';
             document.querySelector('input[name="periodType"][value="years"]').checked = true;
             if (onlyNetSwitch) onlyNetSwitch.checked = false;
-            window.confettiFired = false;
             calculateAndRender();
         });
     }
@@ -651,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (calcForm) {
         calcForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            calculateAndRender();
+            calculateAndRender({ allowConfetti: true });
         });
     }
 

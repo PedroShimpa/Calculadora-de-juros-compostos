@@ -32,13 +32,30 @@ $selicRate = $taxasData['SELIC']['valor'] ?? 13.75;
 $cdiRate = $taxasData['CDI']['valor'] ?? 13.65;
 $ipcaRate = $taxasData['IPCA']['valor'] ?? 4.58;
 
+function parseBRL_PHP($val, float $default = 0.0): float {
+    if ($val === null || $val === '') return $default;
+    if (is_numeric($val)) return (float)$val;
+    $str = trim((string)$val);
+    if (strpos($str, ',') !== false) {
+        $str = str_replace('.', '', $str);
+        $str = str_replace(',', '.', $str);
+    } else {
+        $dotCount = substr_count($str, '.');
+        if ($dotCount > 1 || ($dotCount === 1 && strlen(substr($str, strrpos($str, '.') + 1)) === 3)) {
+            $str = str_replace('.', '', $str);
+        }
+    }
+    $str = preg_replace('/[^\d.-]/', '', $str);
+    return is_numeric($str) ? (float)$str : $default;
+}
+
 // Valores iniciais padrão ou vindos da URL (SSR fallback para SEO e navegação sem JS)
-$initialVal = isset($_GET['inicial']) ? (float)$_GET['inicial'] : 1000.0;
-$monthlyVal = isset($_GET['mensal']) ? (float)$_GET['mensal'] : 1000.0;
-$rawTaxa    = isset($_GET['taxa']) ? (float)$_GET['taxa'] : 8.0;
+$initialVal = isset($_GET['inicial']) ? parseBRL_PHP($_GET['inicial'], 1000.0) : 1000.0;
+$monthlyVal = isset($_GET['mensal']) ? parseBRL_PHP($_GET['mensal'], 1000.0) : 1000.0;
+$rawTaxa    = isset($_GET['taxa']) ? parseBRL_PHP($_GET['taxa'], 8.0) : 8.0;
 $rateVal    = $rawTaxa > 200.0 ? round($rawTaxa / 100.0, 2) : $rawTaxa;
 $rateType   = isset($_GET['tipoTaxa']) ? (string)$_GET['tipoTaxa'] : 'yearly';
-$periodVal  = isset($_GET['periodo']) ? (int)$_GET['periodo'] : 20;
+$periodVal  = isset($_GET['periodo']) ? (int)preg_replace('/\D/', '', (string)$_GET['periodo']) : 20;
 $periodType = isset($_GET['tipoPeriodo']) ? (string)$_GET['tipoPeriodo'] : 'years';
 $onlyNet    = isset($_GET['liquido']) ? filter_var($_GET['liquido'], FILTER_VALIDATE_BOOLEAN) : false;
 

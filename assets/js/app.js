@@ -20,6 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPrint = document.getElementById('btnPrint');
     const themeToggleBtn = document.getElementById('themeToggle');
 
+    // Switch de Valor Líquido (IR 15% + IPCA)
+    const onlyNetSwitch = document.getElementById('onlyNetSwitch');
+    const netActiveBadge = document.getElementById('netActiveBadge');
+    const netExplanationAlert = document.getElementById('netExplanationAlert');
+    const kpiNetBadge = document.getElementById('kpiNetBadge');
+    const kpiFinalBalanceSubtitle = document.getElementById('kpiFinalBalanceSubtitle');
+    let currentIpcaRate = 4.58;
+
     // KPI Display
     const kpiFinalBalance = document.getElementById('kpiFinalBalance');
     const kpiTotalInvested = document.getElementById('kpiTotalInvested');
@@ -62,10 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function parseBRL(value) {
-        if (typeof value === 'number') return value;
-        if (!value) return 0;
-        const cleaned = value.toString().replace(/[^\d,-]/g, '').replace(',', '.');
-        const num = parseFloat(cleaned);
+        if (typeof value === 'number') return isNaN(value) ? 0 : value;
+        if (value === null || value === undefined) return 0;
+        let str = value.toString().trim();
+        if (!str) return 0;
+        // Se contiver vírgula (formatação pt-BR como "13,75" ou "1.000,50")
+        if (str.includes(',')) {
+            str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+            // Se contiver ponto ou formato numérico padrão ("13.75" de input number)
+            str = str.replace(/[^\d.-]/g, '');
+        }
+        const num = parseFloat(str);
         return isNaN(num) ? 0 : num;
     }
 
@@ -127,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Lógica Financeira Matemática no Frontend (Instantânea)
-    function simulate(initialVal, monthlyVal, rate, rateType, periodVal, periodType) {
+    function simulate(initialVal, monthlyVal, rate, rateType, periodVal, periodType, onlyNet = false, taxRate = 15.0, inflationRate = 4.58) {
         const initial = Math.max(0, initialVal);
         const monthly = Math.max(0, monthlyVal);
         const interestRate = Math.max(0, rate);
@@ -138,13 +154,24 @@ document.addEventListener('DOMContentLoaded', () => {
         let monthlyRate = 0;
         let annualRate = 0;
         const rateDec = interestRate / 100.0;
+        const rawAnnual = (rateType === 'yearly' || rateType === 'anual') ? rateDec : (Math.pow(1 + rateDec, 12.0) - 1.0);
 
-        if (rateType === 'yearly' || rateType === 'anual') {
-            monthlyRate = Math.pow(1 + rateDec, 1.0 / 12.0) - 1.0;
-            annualRate = rateDec;
+        if (onlyNet) {
+            // 1. Descontar IR de 15% sobre o rendimento nominal
+            const netAnnual = rawAnnual * (1.0 - (taxRate / 100.0));
+            // 2. Descontar IPCA (inflação) pela Equação de Fisher
+            const ipcaDec = inflationRate / 100.0;
+            const realAnnual = ((1.0 + netAnnual) / (1.0 + ipcaDec)) - 1.0;
+            annualRate = realAnnual;
+            monthlyRate = realAnnual <= -1.0 ? 0.0 : Math.pow(1.0 + realAnnual, 1.0 / 12.0) - 1.0;
         } else {
-            monthlyRate = rateDec;
-            annualRate = Math.pow(1 + rateDec, 12.0) - 1.0;
+            if (rateType === 'yearly' || rateType === 'anual') {
+                monthlyRate = Math.pow(1 + rateDec, 1.0 / 12.0) - 1.0;
+                annualRate = rateDec;
+            } else {
+                monthlyRate = rateDec;
+                annualRate = rawAnnual;
+            }
         }
 
         let balance = initial;
@@ -190,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const monthlyPassiveIncome = balance * monthlyRate;
+        const monthlyPassiveIncome = balance * Math.max(0, monthlyRate);
         const rule4PercentMonthly = (balance * 0.04) / 12.0;
 
         return {
@@ -202,6 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 period: period,
                 periodType: periodType,
                 totalMonths: totalMonths,
+                onlyNet: onlyNet,
+                taxRate: taxRate,
+                inflationRate: inflationRate,
                 effectiveMonthlyRate: (monthlyRate * 100).toFixed(4),
                 effectiveAnnualRate: (annualRate * 100).toFixed(4)
             },
@@ -212,7 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 interestPercentage: balance > 0 ? ((totalInterest / balance) * 100).toFixed(1) : 0,
                 investedPercentage: balance > 0 ? ((totalInvested / balance) * 100).toFixed(1) : 0,
                 monthlyPassiveIncome: monthlyPassiveIncome,
-                rule4PercentMonthly: rule4PercentMonthly
+                rule4PercentMonthly: rule4PercentMonthly,
+                onlyNet: onlyNet
             },
             yearlyTimeline: yearlyTimeline,
             monthlyTimeline: monthlyTimeline
@@ -226,8 +257,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const rateType = document.querySelector('input[name="rateType"]:checked')?.value || 'yearly';
         const periodVal = parseInt(periodInput.value, 10) || 1;
         const periodType = document.querySelector('input[name="periodType"]:checked')?.value || 'years';
+        const onlyNet = onlyNetSwitch ? onlyNetSwitch.checked : false;
 
-        const result = simulate(initialVal, monthlyVal, rateVal, rateType, periodVal, periodType);
+        // Atualizar badges visuais de líquido
+        if (netActiveBadge) netActiveBadge.classList.toggle('d-none', !onlyNet);
+        if (netExplanationAlert) netExplanationAlert.classList.toggle('d-none', !onlyNet);
+        if (kpiNetBadge) kpiNetBadge.classList.toggle('d-none', !onlyNet);
+        if (kpiFinalBalanceSubtitle) {
+            kpiFinalBalanceSubtitle.textContent = onlyNet ? 'Poder de compra real descontando IR e IPCA' : 'Montante acumulado ao fim do período';
+        }
+
+        const result = simulate(initialVal, monthlyVal, rateVal, rateType, periodVal, periodType, onlyNet, 15.0, currentIpcaRate);
         lastSimulationResult = result;
 
         renderSummary(result.summary);
@@ -551,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         url.searchParams.set('tipoTaxa', params.rateType);
         url.searchParams.set('periodo', params.period);
         url.searchParams.set('tipoPeriodo', params.periodType);
+        url.searchParams.set('liquido', params.onlyNet ? 'true' : 'false');
         window.history.replaceState({}, '', url);
     }
 
@@ -583,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('input[name="rateType"][value="yearly"]').checked = true;
             periodInput.value = '20';
             document.querySelector('input[name="periodType"][value="years"]').checked = true;
+            if (onlyNetSwitch) onlyNetSwitch.checked = false;
             window.confettiFired = false;
             calculateAndRender();
         });
@@ -596,6 +638,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    if (onlyNetSwitch) {
+        onlyNetSwitch.addEventListener('change', () => {
+            calculateAndRender();
+        });
+    }
 
     rateTypeInputs.forEach(radio => radio.addEventListener('change', calculateAndRender));
     periodTypeInputs.forEach(radio => radio.addEventListener('change', calculateAndRender));
@@ -612,7 +660,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('inicial')) initialInput.value = urlParams.get('inicial');
         if (urlParams.has('mensal')) monthlyInput.value = urlParams.get('mensal');
-        if (urlParams.has('taxa')) rateInput.value = urlParams.get('taxa');
+        if (urlParams.has('taxa')) {
+            const rawRate = parseBRL(urlParams.get('taxa'));
+            if (rawRate > 200) {
+                rateInput.value = (rawRate / 100).toFixed(2).replace(/\.00$/, '');
+            } else if (rawRate > 0) {
+                rateInput.value = rawRate;
+            }
+        }
         if (urlParams.has('tipoTaxa')) {
             const r = document.querySelector(`input[name="rateType"][value="${urlParams.get('tipoTaxa')}"]`);
             if (r) r.checked = true;
@@ -621,6 +676,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (urlParams.has('tipoPeriodo')) {
             const p = document.querySelector(`input[name="periodType"][value="${urlParams.get('tipoPeriodo')}"]`);
             if (p) p.checked = true;
+        }
+        if (urlParams.has('liquido') && onlyNetSwitch) {
+            onlyNetSwitch.checked = urlParams.get('liquido') === 'true';
         }
     }
 
@@ -648,6 +706,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (ratesData.IPCA) ipca = Number(ratesData.IPCA.valor);
             }
 
+            // Armazenar taxa IPCA em tempo real
+            currentIpcaRate = ipca;
+
             // Atualizar valores visuais na barra superior
             const rateSelicVal = document.getElementById('rateSelicVal');
             const rateCdiVal = document.getElementById('rateCdiVal');
@@ -655,6 +716,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (rateSelicVal) rateSelicVal.innerHTML = `${selic.toFixed(2).replace('.', ',')}% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small>`;
             if (rateCdiVal) rateCdiVal.innerHTML = `${cdi.toFixed(2).replace('.', ',')}% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small>`;
             if (rateIpcaVal) rateIpcaVal.innerHTML = `${ipca.toFixed(2).replace('.', ',')}% <small class="fw-normal text-muted" style="font-size:0.75rem;">a.a.</small>`;
+
+            // Se o modo líquido estiver ativo, recalcular com a taxa atualizada
+            if (onlyNetSwitch && onlyNetSwitch.checked) {
+                calculateAndRender();
+            }
 
             // Atualizar atributos de dados nos cards
             document.querySelectorAll('[data-apply-name="SELIC"]').forEach(el => el.setAttribute('data-apply-rate', selic));
@@ -693,10 +759,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Inicializar Tooltips do Bootstrap
+    function initTooltips() {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        [...tooltipTriggerList].forEach(el => new bootstrap.Tooltip(el));
+    }
+
     // Inicialização
     initTheme();
     loadFromURL();
     loadLiveRates();
+    initTooltips();
     calculateAndRender();
 });
 

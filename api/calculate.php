@@ -40,6 +40,9 @@ try {
     $rateType = isset($input['rateType']) ? (string)$input['rateType'] : 'yearly';
     $period = isset($input['period']) ? (int)$input['period'] : 20;
     $periodType = isset($input['periodType']) ? (string)$input['periodType'] : 'years';
+    $onlyNet = isset($input['onlyNet']) ? filter_var($input['onlyNet'], FILTER_VALIDATE_BOOLEAN) : false;
+    $taxRate = isset($input['taxRate']) ? (float)$input['taxRate'] : 15.0;
+    $inflationRate = isset($input['inflationRate']) ? (float)$input['inflationRate'] : 4.58;
 
     // Validações básicas de segurança
     if ($period <= 0 || $period > 1000) {
@@ -55,7 +58,10 @@ try {
         $interestRate,
         $rateType,
         $period,
-        $periodType
+        $periodType,
+        $onlyNet,
+        $taxRate,
+        $inflationRate
     );
 
     $result = $calculator->calculate();

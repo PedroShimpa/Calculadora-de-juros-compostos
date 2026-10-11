@@ -12,26 +12,6 @@ require_once __DIR__ . '/includes/Calculator.php';
 
 use App\CompoundInterestCalculator;
 
-// Valores iniciais padrão ou vindos da URL (SSR fallback para SEO e navegação sem JS)
-$initialVal = isset($_GET['inicial']) ? (float)$_GET['inicial'] : 1000.0;
-$monthlyVal = isset($_GET['mensal']) ? (float)$_GET['mensal'] : 1000.0;
-$rateVal    = isset($_GET['taxa']) ? (float)$_GET['taxa'] : 8.0;
-$rateType   = isset($_GET['tipoTaxa']) ? (string)$_GET['tipoTaxa'] : 'yearly';
-$periodVal  = isset($_GET['periodo']) ? (int)$_GET['periodo'] : 20;
-$periodType = isset($_GET['tipoPeriodo']) ? (string)$_GET['tipoPeriodo'] : 'years';
-
-$calculator = new CompoundInterestCalculator(
-    $initialVal,
-    $monthlyVal,
-    $rateVal,
-    $rateType,
-    $periodVal,
-    $periodType
-);
-
-$serverSimulation = $calculator->calculate();
-$summary = $serverSimulation['summary'];
-
 // Obter taxas em tempo real (cache ou padrão inicial)
 $cacheFile = sys_get_temp_dir() . '/calc_taxas_cache.json';
 $taxasData = [
@@ -51,6 +31,31 @@ if (file_exists($cacheFile)) {
 $selicRate = $taxasData['SELIC']['valor'] ?? 13.75;
 $cdiRate = $taxasData['CDI']['valor'] ?? 13.65;
 $ipcaRate = $taxasData['IPCA']['valor'] ?? 4.58;
+
+// Valores iniciais padrão ou vindos da URL (SSR fallback para SEO e navegação sem JS)
+$initialVal = isset($_GET['inicial']) ? (float)$_GET['inicial'] : 1000.0;
+$monthlyVal = isset($_GET['mensal']) ? (float)$_GET['mensal'] : 1000.0;
+$rawTaxa    = isset($_GET['taxa']) ? (float)$_GET['taxa'] : 8.0;
+$rateVal    = $rawTaxa > 200.0 ? round($rawTaxa / 100.0, 2) : $rawTaxa;
+$rateType   = isset($_GET['tipoTaxa']) ? (string)$_GET['tipoTaxa'] : 'yearly';
+$periodVal  = isset($_GET['periodo']) ? (int)$_GET['periodo'] : 20;
+$periodType = isset($_GET['tipoPeriodo']) ? (string)$_GET['tipoPeriodo'] : 'years';
+$onlyNet    = isset($_GET['liquido']) ? filter_var($_GET['liquido'], FILTER_VALIDATE_BOOLEAN) : false;
+
+$calculator = new CompoundInterestCalculator(
+    $initialVal,
+    $monthlyVal,
+    $rateVal,
+    $rateType,
+    $periodVal,
+    $periodType,
+    $onlyNet,
+    15.0,
+    $ipcaRate
+);
+
+$serverSimulation = $calculator->calculate();
+$summary = $serverSimulation['summary'];
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -204,6 +209,32 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </div>
 
+                    <!-- Toggle: Considerar somente valor líquido -->
+                    <div class="p-3 mb-4 rounded-3 border bg-body-tertiary">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" id="onlyNetSwitch" name="onlyNet" <?php echo $onlyNet ? 'checked' : ''; ?>>
+                                <label class="form-check-label fw-bold d-inline-flex align-items-center gap-1" for="onlyNetSwitch" style="cursor: pointer;">
+                                    <span>Considerar somente valor líquido</span>
+                                    <span class="badge rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" 
+                                          style="width: 20px; height: 20px; font-size: 0.78rem; cursor: help;" 
+                                          data-bs-toggle="tooltip" 
+                                          data-bs-placement="top" 
+                                          title="Ao ativar, a calculadora desconta a inflação oficial (IPCA de <?php echo number_format($ipcaRate, 2, ',', '.'); ?>% a.a.) e o Imposto de Renda médio de 15% sobre os rendimentos, revelando o poder de compra real e líquido no futuro.">
+                                        ?
+                                    </span>
+                                </label>
+                            </div>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle small <?php echo $onlyNet ? '' : 'd-none'; ?>" id="netActiveBadge">
+                                IR 15% + IPCA
+                            </span>
+                        </div>
+                        <div class="small text-muted mt-2 <?php echo $onlyNet ? '' : 'd-none'; ?>" id="netExplanationAlert">
+                            <i class="bi bi-shield-check text-info me-1"></i>
+                            Descontando <strong>15% de IR</strong> sobre os lucros e <strong><?php echo number_format($ipcaRate, 2, ',', '.'); ?>% de inflação (IPCA)</strong> para projetar o patrimônio real em poder de compra de hoje.
+                        </div>
+                    </div>
+
                     <!-- Botões de Ação -->
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary-gradient btn-lg d-flex align-items-center justify-content-center gap-2">
@@ -243,13 +274,18 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="col-sm-6">
                     <div class="kpi-card kpi-total">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="kpi-label">Valor Total Final</span>
+                            <span class="kpi-label d-flex align-items-center gap-1">
+                                <span>Valor Total Final</span>
+                                <span class="badge bg-info-subtle text-info border border-info-subtle <?php echo $onlyNet ? '' : 'd-none'; ?>" id="kpiNetBadge" style="font-size: 0.68rem;">Líquido Real</span>
+                            </span>
                             <i class="bi bi-wallet2 text-success fs-5"></i>
                         </div>
                         <div class="kpi-value text-success" id="kpiFinalBalance">
                             R$ <?php echo number_format($summary['finalBalance'], 2, ',', '.'); ?>
                         </div>
-                        <small class="text-muted">Montante acumulado ao fim do período</small>
+                        <small class="text-muted" id="kpiFinalBalanceSubtitle">
+                            <?php echo $onlyNet ? 'Poder de compra real descontando IR e IPCA' : 'Montante acumulado ao fim do período'; ?>
+                        </small>
                     </div>
                 </div>
 

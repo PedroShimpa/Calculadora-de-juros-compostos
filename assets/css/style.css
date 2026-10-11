@@ -1,0 +1,451 @@
+/* ==========================================================================
+   Calculadora de Juros Compostos - Design System & Custom Styles
+   Desenvolvido por: Pedro Falconi | Projeto Open Source (Licença MIT)
+   Inspirado em: Investidor Sardinha
+   ========================================================================== */
+
+:root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    /* Cores do Tema Claro */
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-subtle: #f1f5f9;
+    --bg-input: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --border-focus: #10b981;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 25px rgba(16, 185, 129, 0.15);
+
+    /* Cores de Destaque Financeiro */
+    --primary: #059669;
+    --primary-hover: #047857;
+    --primary-light: #ecfdf5;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --purple: #8b5cf6;
+    --purple-light: #f5f3ff;
+}
+
+[data-bs-theme="dark"] {
+    --bg-main: #090d16;
+    --bg-card: #111827;
+    --bg-card-subtle: #1a2234;
+    --bg-input: #0f172a;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: #1e293b;
+    --border-focus: #10b981;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 15px 35px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 30px rgba(16, 185, 129, 0.25);
+
+    --primary: #10b981;
+    --primary-hover: #34d399;
+    --primary-light: rgba(16, 185, 129, 0.12);
+    --accent: #3b82f6;
+    --accent-light: rgba(59, 130, 246, 0.12);
+    --warning: #fbbf24;
+    --warning-light: rgba(251, 191, 36, 0.12);
+    --purple: #a78bfa;
+    --purple-light: rgba(167, 139, 250, 0.12);
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Navbar */
+.navbar-custom {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-bs-theme="dark"] .navbar-custom {
+    background-color: rgba(15, 23, 42, 0.85);
+}
+
+.brand-badge {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Hero Badge */
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-radius: 9999px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.hero-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Cards & Glassmorphism */
+.calc-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 1.25rem;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.calc-card:hover {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.calc-card-glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+[data-bs-theme="dark"] .calc-card-glass {
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Metric / KPI Cards */
+.kpi-card {
+    padding: 1.25rem;
+    border-radius: 1rem;
+    background: var(--bg-card-subtle);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+}
+
+.kpi-card.kpi-total::before { background: linear-gradient(180deg, #10b981, #059669); }
+.kpi-card.kpi-invested::before { background: linear-gradient(180deg, #3b82f6, #1d4ed8); }
+.kpi-card.kpi-interest::before { background: linear-gradient(180deg, #8b5cf6, #6d28d9); }
+.kpi-card.kpi-income::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+
+.kpi-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.kpi-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+/* Inputs & Form Groups */
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+
+.form-control, .form-select {
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border: 1.5px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    font-weight: 500;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.18);
+}
+
+.input-group-text {
+    background-color: var(--bg-card-subtle);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-muted);
+    font-weight: 600;
+    border-radius: 0.75rem;
+}
+
+.btn-toggle-unit {
+    border: 1.5px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.85rem;
+    color: var(--text-muted);
+    background-color: var(--bg-card-subtle);
+}
+
+.btn-check:checked + .btn-toggle-unit {
+    background-color: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+/* Preset Buttons */
+.preset-badge {
+    cursor: pointer;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 0.5rem;
+    background-color: var(--bg-card-subtle);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.preset-badge:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border-color: rgba(16, 185, 129, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Action Buttons */
+.btn-primary-gradient {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    padding: 0.8rem 1.5rem;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    transition: all 0.2s ease;
+}
+
+.btn-primary-gradient:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+    transform: translateY(-2px);
+    color: #ffffff;
+}
+
+.btn-secondary-custom {
+    background: var(--bg-card-subtle);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+    font-weight: 600;
+    border-radius: 0.75rem;
+    padding: 0.8rem 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary-custom:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+/* Progress bar visual */
+.patrimony-bar {
+    height: 12px;
+    border-radius: 9999px;
+    background: var(--bg-card-subtle);
+    overflow: hidden;
+    display: flex;
+}
+
+.patrimony-invested-bar {
+    background: #3b82f6;
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.patrimony-interest-bar {
+    background: #10b981;
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Table styling */
+.custom-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.custom-table thead th {
+    background-color: var(--bg-card-subtle);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.85rem 1rem;
+}
+
+.custom-table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.88rem;
+}
+
+.custom-table tbody tr:hover {
+    background-color: var(--bg-card-subtle);
+}
+
+/* Accordion FAQ */
+.accordion-custom .accordion-item {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0.85rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+
+.accordion-custom .accordion-button {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    font-weight: 600;
+    padding: 1.1rem 1.25rem;
+    box-shadow: none;
+}
+
+.accordion-custom .accordion-button:not(.collapsed) {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.accordion-custom .accordion-button:focus {
+    box-shadow: none;
+}
+
+.accordion-custom .accordion-body {
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-size: 0.95rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Math formula display box */
+.formula-box {
+    background: var(--bg-card-subtle);
+    border-left: 4px solid var(--primary);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 1.25rem 0;
+}
+
+/* Comparison cards (Simple vs Compound) */
+.comparison-pill {
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.comparison-pill-simple {
+    background-color: rgba(148, 163, 184, 0.2);
+    color: var(--text-muted);
+}
+
+.comparison-pill-compound {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+/* Chart Canvas container */
+.chart-container-box {
+    position: relative;
+    width: 100%;
+    min-height: 380px;
+    max-height: 480px;
+}
+
+/* Footer */
+footer {
+    background-color: var(--bg-card);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: auto;
+}
+
+/* Toast alert notification */
+.toast-container {
+    z-index: 1090;
+}
+
+/* Media Queries & Print */
+@media (max-width: 768px) {
+    .kpi-value {
+        font-size: 1.35rem;
+    }
+    .chart-container-box {
+        min-height: 300px;
+    }
+}
+
+@media print {
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    .navbar-custom, .btn-primary-gradient, .btn-secondary-custom, .preset-badge, #themeToggle, .no-print {
+        display: none !important;
+    }
+    .calc-card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+    .chart-container-box {
+        page-break-inside: avoid;
+    }
+}

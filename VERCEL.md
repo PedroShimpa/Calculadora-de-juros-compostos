@@ -68,3 +68,5 @@ Se você preferir publicar diretamente pela linha de comando:
 * **Roteamento:** Mapeia corretamente os arquivos estáticos (`/assets/*`, `/robots.txt`, `/sitemap.xml`) e redireciona rotas para o backend PHP.
 * **Cache em Memória/Temp:** O sistema utiliza `sys_get_temp_dir()` para armazenar o cache de taxas da BrasilAPI de forma compatível com a arquitetura serverless somente-leitura do Vercel Lambda.
 * **[`.vercelignore`](./.vercelignore):** Evita upload de pastas desnecessárias como `cache/`, temporários e scripts de desenvolvimento local.
+* **Variáveis de Ambiente (Environment Variables):**
+  - `GOOGLE_ANALYTICS_TAG`: ID de medição do Google Analytics (ex.: `G-FPTRH0XXBC`). Se não informada, o sistema já utiliza `G-FPTRH0XXBC` como padrão. Para alterar pelo painel do Vercel, acesse **Project Settings > Environment Variables** e adicione a chave `GOOGLE_ANALYTICS_TAG`.

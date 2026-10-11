@@ -74,15 +74,147 @@ document.addEventListener('DOMContentLoaded', () => {
         if (value === null || value === undefined) return 0;
         let str = value.toString().trim();
         if (!str) return 0;
-        // Se contiver vírgula (formatação pt-BR como "13,75" ou "1.000,50")
+
+        // Se contiver vírgula: tudo antes da vírgula é inteiro, depois é decimal
         if (str.includes(',')) {
             str = str.replace(/\./g, '').replace(',', '.');
         } else {
-            // Se contiver ponto ou formato numérico padrão ("13.75" de input number)
-            str = str.replace(/[^\d.-]/g, '');
+            // Se NÃO tiver vírgula:
+            // Se tiver ponto e terminar com .XX (1 ou 2 casas, ex: 13.75):
+            if (/\.\d{1,2}$/.test(str) && (str.match(/\./g) || []).length === 1) {
+                // mantém o ponto decimal (ex: taxa 13.75)
+            } else {
+                // Caso contrário, são pontos de milhar: remove todos os pontos (ex: 1.000 -> 1000)
+                str = str.replace(/\./g, '');
+            }
         }
+        str = str.replace(/[^\d.-]/g, '');
         const num = parseFloat(str);
         return isNaN(num) ? 0 : num;
+    }
+
+    // Formata valor monetário com pontos de milhar e vírgula decimal
+    function formatBRLValue(value) {
+        if (value === null || value === undefined) return '';
+        let str = value.toString().trim();
+        if (!str) return '';
+
+        str = str.replace(/^R\$\s*/i, '');
+
+        // Se o usuário digitou ponto no final (ex: "1000."), converter para vírgula
+        if (str.endsWith('.')) {
+            str = str.slice(0, -1) + ',';
+        }
+
+        // Se não contiver vírgula, mas contiver um ponto com 1 ou 2 dígitos no final (ex: "1000.50"):
+        if (!str.includes(',') && /\.\d{1,2}$/.test(str)) {
+            str = str.replace(/\.(\d{1,2})$/, ',$1');
+        }
+
+        let integerPart = '';
+        let decimalPart = null;
+
+        if (str.includes(',')) {
+            const parts = str.split(',');
+            integerPart = parts[0].replace(/\D/g, '');
+            decimalPart = parts.slice(1).join('').replace(/\D/g, '').slice(0, 2);
+        } else {
+            integerPart = str.replace(/\D/g, '');
+        }
+
+        if (!integerPart && decimalPart === null) return '';
+
+        if (integerPart) {
+            integerPart = integerPart.replace(/^0+(?=\d)/, '');
+            if (integerPart === '') integerPart = '0';
+            integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        } else if (decimalPart !== null) {
+            integerPart = '0';
+        }
+
+        if (decimalPart !== null) {
+            return `${integerPart},${decimalPart}`;
+        }
+        return integerPart;
+    }
+
+    // Formata valor de taxa de juros (ex: 13,75 ou 8)
+    function formatRateValue(value) {
+        if (value === null || value === undefined) return '';
+        let str = value.toString().trim().replace('%', '');
+        if (!str) return '';
+
+        if (str.endsWith('.')) {
+            str = str.slice(0, -1) + ',';
+        }
+
+        if (!str.includes(',') && str.includes('.')) {
+            str = str.replace('.', ',');
+        }
+
+        const parts = str.split(',');
+        let intPart = parts[0].replace(/\D/g, '');
+        let decPart = parts.length > 1 ? parts.slice(1).join('').replace(/\D/g, '').slice(0, 2) : null;
+
+        if (!intPart && decPart === null) return '';
+        if (!intPart && decPart !== null) intPart = '0';
+
+        if (decPart !== null) {
+            return `${intPart},${decPart}`;
+        }
+        return intPart;
+    }
+
+    // Aplica formatação monetária em tempo de digitação mantendo o cursor
+    function formatCurrencyInput(input) {
+        const raw = input.value;
+        if (!raw) return;
+
+        const selectionStart = input.selectionStart || 0;
+        const digitsBefore = raw.slice(0, selectionStart).replace(/\D/g, '').length;
+        const hadCommaBefore = raw.slice(0, selectionStart).includes(',') || (raw.slice(0, selectionStart).endsWith('.') && !raw.includes(','));
+
+        const formatted = formatBRLValue(raw);
+        input.value = formatted;
+
+        let newPos = formatted.length;
+        if (selectionStart < raw.length) {
+            let counted = 0;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) counted++;
+                if (counted === digitsBefore) {
+                    newPos = (hadCommaBefore && formatted[i + 1] === ',') ? i + 2 : i + 1;
+                    break;
+                }
+            }
+        }
+        input.setSelectionRange(newPos, newPos);
+    }
+
+    // Aplica formatação de taxa em tempo de digitação mantendo o cursor
+    function formatRateInputField(input) {
+        const raw = input.value;
+        if (!raw) return;
+
+        const selectionStart = input.selectionStart || 0;
+        const digitsBefore = raw.slice(0, selectionStart).replace(/\D/g, '').length;
+        const hadCommaBefore = raw.slice(0, selectionStart).includes(',') || raw.slice(0, selectionStart).includes('.');
+
+        const formatted = formatRateValue(raw);
+        input.value = formatted;
+
+        let newPos = formatted.length;
+        if (selectionStart < raw.length) {
+            let counted = 0;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) counted++;
+                if (counted === digitsBefore) {
+                    newPos = (hadCommaBefore && formatted[i + 1] === ',') ? i + 2 : i + 1;
+                    break;
+                }
+            }
+        }
+        input.setSelectionRange(newPos, newPos);
     }
 
     function formatCurrency(val) {
@@ -110,6 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chartInstance) {
             updateChartTheme();
         }
+        if (fireChartInstance && lastSimulationResult) {
+            renderFireProjectionChart(lastSimulationResult);
+        }
     }
 
     if (themeToggleBtn) {
@@ -124,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         badge.addEventListener('click', () => {
             const rate = badge.getAttribute('data-preset-rate');
             const type = badge.getAttribute('data-preset-type') || 'yearly';
-            rateInput.value = rate;
+            rateInput.value = formatRateValue(rate);
             const targetRadio = document.querySelector(`input[name="rateType"][value="${type}"]`);
             if (targetRadio) targetRadio.checked = true;
             calculateAndRender();
@@ -485,49 +620,132 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Modal de Retiradas
-    function updateWithdrawalModalData(result) {
-        if (!modalPatrimony) return;
-        const balance = result.summary.finalBalance;
-        const passiveIncome = result.summary.monthlyPassiveIncome;
-        const rule4Income = result.summary.rule4PercentMonthly;
+    const resultTabs = document.getElementById('resultTabs');
+    const chartViewToggleWrapper = document.getElementById('chartViewToggleWrapper');
+    if (resultTabs && chartViewToggleWrapper) {
+        resultTabs.addEventListener('shown.bs.tab', (e) => {
+            const targetId = e.target.getAttribute('id');
+            chartViewToggleWrapper.style.display = targetId === 'tab-chart' ? 'block' : 'none';
+        });
+    }
 
-        modalPatrimony.textContent = formatCurrency(balance);
-        modalPerpetualIncome.textContent = formatCurrency(passiveIncome);
-        modalRule4Income.textContent = formatCurrency(rule4Income);
+    // =========================================================================
+    // Módulo Completo: Viver de Renda & FIRE (Independência Financeira)
+    // =========================================================================
+    const tabViverRendaBtn = document.getElementById('tab-viver-renda');
+    const kpiIncomeCard = document.getElementById('kpiIncomeCard');
+    const fireWithdrawalInput = document.getElementById('fireWithdrawalInput');
+    const fireDepletionFeedback = document.getElementById('fireDepletionFeedback');
+    const fireTargetIncomeInput = document.getElementById('fireTargetIncomeInput');
+    const fireTargetPatrimony4 = document.getElementById('fireTargetPatrimony4');
+    const fireTargetPatrimonyPerp = document.getElementById('fireTargetPatrimonyPerp');
+    const fireProgressPercent = document.getElementById('fireProgressPercent');
+    const fireProgressBar = document.getElementById('fireProgressBar');
+    const fireGoalRemainingText = document.getElementById('fireGoalRemainingText');
+    const fireChartCanvas = document.getElementById('fireProjectionChart');
+    let fireChartInstance = null;
 
-        if (customWithdrawalInput) {
-            if (!customWithdrawalInput.value || customWithdrawalInput.value === '0') {
-                customWithdrawalInput.value = Math.round(passiveIncome);
-            }
-            calculateDepletion();
+    function switchToFireTab() {
+        if (tabViverRendaBtn) {
+            const tab = bootstrap.Tab.getOrCreateInstance(tabViverRendaBtn);
+            tab.show();
+            document.getElementById('resultTabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => {
+                if (fireChartInstance) fireChartInstance.resize();
+            }, 150);
         }
     }
 
-    function calculateDepletion() {
-        if (!lastSimulationResult || !customWithdrawalInput || !modalDepletionText) return;
-        const withdrawal = parseBRL(customWithdrawalInput.value);
+    if (btnOpenWithdrawal) {
+        btnOpenWithdrawal.addEventListener('click', switchToFireTab);
+    }
+
+    if (kpiIncomeCard) {
+        kpiIncomeCard.addEventListener('click', switchToFireTab);
+    }
+
+    if (tabViverRendaBtn) {
+        tabViverRendaBtn.addEventListener('shown.bs.tab', () => {
+            if (lastSimulationResult) {
+                renderFireProjectionChart(lastSimulationResult);
+            }
+        });
+    }
+
+    function updateWithdrawalModalData(result) {
+        if (!result) return;
+        const balance = result.summary.finalBalance;
+        const passiveIncome = result.summary.monthlyPassiveIncome;
+        const rule4Income = result.summary.rule4PercentMonthly;
+        const rule3Income = (balance * 0.03) / 12;
+        const rule5Income = (balance * 0.05) / 12;
+
+        // Atualizar textos no cabeçalho e cards
+        document.querySelectorAll('.fire-display-patrimony').forEach(el => el.textContent = formatCurrency(balance));
+        document.querySelectorAll('.fire-display-perpetual').forEach(el => el.textContent = formatCurrency(passiveIncome));
+
+        const fireCardPerpetualVal = document.getElementById('fireCardPerpetualVal');
+        const fireCardRule4Val = document.getElementById('fireCardRule4Val');
+        const fireCardRule3Val = document.getElementById('fireCardRule3Val');
+        const fireCardRule5Val = document.getElementById('fireCardRule5Val');
+        if (fireCardPerpetualVal) fireCardPerpetualVal.textContent = formatCurrency(passiveIncome);
+        if (fireCardRule4Val) fireCardRule4Val.textContent = formatCurrency(rule4Income);
+        if (fireCardRule3Val) fireCardRule3Val.textContent = formatCurrency(rule3Income);
+        if (fireCardRule5Val) fireCardRule5Val.textContent = formatCurrency(rule5Income);
+
+        // Modal antigo (sincronização)
+        if (modalPatrimony) modalPatrimony.textContent = formatCurrency(balance);
+        if (modalPerpetualIncome) modalPerpetualIncome.textContent = `${formatCurrency(passiveIncome)}/mês`;
+        if (modalRule4Income) modalRule4Income.textContent = `${formatCurrency(rule4Income)}/mês`;
+
+        // Se o campo de retirada estiver vazio, preencher com a renda perpétua
+        if (fireWithdrawalInput && (!fireWithdrawalInput.value || fireWithdrawalInput.value === '0')) {
+            fireWithdrawalInput.value = formatBRLValue(Math.round(passiveIncome));
+        }
+        if (customWithdrawalInput && (!customWithdrawalInput.value || customWithdrawalInput.value === '0')) {
+            customWithdrawalInput.value = formatBRLValue(Math.round(passiveIncome));
+        }
+
+        calculateFireDepletion();
+        calculateFireGoal();
+        renderFireProjectionChart(result);
+    }
+
+    function calculateFireDepletion() {
+        if (!lastSimulationResult || !fireWithdrawalInput || !fireDepletionFeedback) return;
+        const withdrawal = parseBRL(fireWithdrawalInput.value);
         const balance = lastSimulationResult.summary.finalBalance;
         const monthlyRate = lastSimulationResult.summary.monthlyPassiveIncome / (balance || 1);
+        const perpetualIncome = balance * monthlyRate;
 
         if (withdrawal <= 0) {
-            modalDepletionText.innerHTML = `<span class="text-muted">Insira um valor de retirada mensal para simular a sustentabilidade.</span>`;
+            fireDepletionFeedback.innerHTML = `
+                <div class="alert alert-secondary d-flex align-items-center gap-2 mb-0 py-2">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Insira um valor de retirada mensal acima para simular a sustentabilidade do seu patrimônio.</span>
+                </div>
+            `;
             return;
         }
 
-        const perpetualIncome = balance * monthlyRate;
-
         if (withdrawal <= perpetualIncome) {
-            modalDepletionText.innerHTML = `
-                <div class="alert alert-success d-flex align-items-center gap-2 mb-0">
-                    <i class="bi bi-shield-check fs-4"></i>
+            const surplus = perpetualIncome - withdrawal;
+            fireDepletionFeedback.innerHTML = `
+                <div class="alert alert-success d-flex align-items-start gap-3 mb-0 shadow-sm">
+                    <i class="bi bi-shield-check fs-3 text-success"></i>
                     <div>
-                        <strong>Patrimônio Perpétuo!</strong> A retirada mensal de <strong>${formatCurrency(withdrawal)}</strong> é inferior ou igual ao rendimento mensal gerado (${formatCurrency(perpetualIncome)}). Seu dinheiro nunca acabará e continuará crescendo ou estável!
+                        <div class="fw-bold fs-6">Patrimônio 100% Perpétuo e Blindado!</div>
+                        <p class="mb-1 small">
+                            A retirada mensal de <strong>${formatCurrency(withdrawal)}</strong> é menor ou igual ao rendimento gerado pelos juros (<strong>${formatCurrency(perpetualIncome)}/mês</strong>).
+                        </p>
+                        <div class="small text-success-emphasis fw-semibold">
+                            <i class="bi bi-arrow-up-right me-1"></i> Sobra de segurança de <strong>${formatCurrency(surplus)}/mês</strong> reinvestida automaticamente, fazendo o patrimônio continuar crescendo para sempre!
+                        </div>
                     </div>
                 </div>
             `;
         } else {
-            // Simular descapitalização
+            // Simular descapitalização mês a mês
             let currentBal = balance;
             let monthsLeft = 0;
             while (currentBal > 0 && monthsLeft < 1200) { // max 100 anos
@@ -535,27 +753,273 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentBal = currentBal + interest - withdrawal;
                 monthsLeft++;
             }
-            const yearsLeft = (monthsLeft / 12).toFixed(1);
+            const yearsLeft = Math.floor(monthsLeft / 12);
+            const remainingMonths = monthsLeft % 12;
+            const yearsStr = yearsLeft > 0 ? `${yearsLeft} ano${yearsLeft > 1 ? 's' : ''}` : '';
+            const monthsStr = remainingMonths > 0 ? `${remainingMonths} m${remainingMonths > 1 ? 'eses' : 'ês'}` : '';
+            const timeFormatted = [yearsStr, monthsStr].filter(Boolean).join(' e ');
 
-            modalDepletionText.innerHTML = `
-                <div class="alert alert-warning d-flex align-items-center gap-2 mb-0">
-                    <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            const isSafeHorizon = yearsLeft >= 35;
+            const alertClass = isSafeHorizon ? 'alert-warning' : 'alert-danger';
+            const iconClass = isSafeHorizon ? 'bi-exclamation-triangle-fill text-warning' : 'bi-x-octagon-fill text-danger';
+
+            fireDepletionFeedback.innerHTML = `
+                <div class="alert ${alertClass} d-flex align-items-start gap-3 mb-0 shadow-sm">
+                    <i class="bi ${iconClass} fs-3"></i>
                     <div>
-                        <strong>Consumo de Principal:</strong> A retirada mensal de <strong>${formatCurrency(withdrawal)}</strong> excede o rendimento gerado pelos juros. O seu patrimônio durará aproximadamente <strong>${monthsLeft} meses (~${yearsLeft} anos)</strong> até se esgotar.
+                        <div class="fw-bold fs-6">
+                            ${isSafeHorizon ? 'Consumo Gradual de Capital (Longo Prazo)' : 'Alerta de Descapitalização!'}
+                        </div>
+                        <p class="mb-1 small">
+                            A retirada de <strong>${formatCurrency(withdrawal)}/mês</strong> excede o rendimento mensal gerado de <strong>${formatCurrency(perpetualIncome)}/mês</strong>, consumindo o saldo principal aos poucos.
+                        </p>
+                        <div class="small fw-semibold">
+                            <i class="bi bi-clock-history me-1"></i> O seu patrimônio durará aproximadamente <strong>${timeFormatted} (${monthsLeft} meses)</strong> até se esgotar completamente.
+                        </div>
                     </div>
                 </div>
             `;
         }
+
+        // Sincronizar com o modal de retiradas se existir
+        if (modalDepletionText) {
+            modalDepletionText.innerHTML = fireDepletionFeedback.innerHTML;
+        }
     }
 
+    // Calculadora Reversa de Liberdade Financeira
+    function calculateFireGoal() {
+        if (!lastSimulationResult || !fireTargetIncomeInput) return;
+        const targetMonthly = parseBRL(fireTargetIncomeInput.value);
+        const currentBalance = lastSimulationResult.summary.finalBalance;
+        const monthlyRate = lastSimulationResult.summary.monthlyPassiveIncome / (currentBalance || 1);
+
+        if (targetMonthly <= 0) return;
+
+        // Pela Regra dos 4% ao ano: Patrimônio = Meta Anual / 0.04 = Meta Mensal * 300
+        const neededPatrimony4 = targetMonthly * 300;
+        // Pela Renda Perpétua: Patrimônio = Meta Mensal / taxaMensal
+        const effectiveRate = monthlyRate > 0 ? monthlyRate : (0.08 / 12);
+        const neededPatrimonyPerp = targetMonthly / effectiveRate;
+
+        if (fireTargetPatrimony4) fireTargetPatrimony4.textContent = formatCurrency(neededPatrimony4);
+        if (fireTargetPatrimonyPerp) fireTargetPatrimonyPerp.textContent = formatCurrency(neededPatrimonyPerp);
+
+        // Progresso em relação à Regra dos 4%
+        const percent = Math.min(100, (currentBalance / (neededPatrimony4 || 1)) * 100);
+        const remaining = Math.max(0, neededPatrimony4 - currentBalance);
+
+        if (fireProgressPercent) fireProgressPercent.textContent = `${percent.toFixed(1)}%`;
+        if (fireProgressBar) {
+            fireProgressBar.style.width = `${percent}%`;
+            if (percent >= 100) {
+                fireProgressBar.style.background = 'linear-gradient(90deg, #10b981 0%, #059669 100%)';
+            } else {
+                fireProgressBar.style.background = 'linear-gradient(90deg, #10b981 0%, #f59e0b 100%)';
+            }
+        }
+
+        if (fireGoalRemainingText) {
+            if (percent >= 100) {
+                fireGoalRemainingText.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-trophy-fill text-warning me-1"></i> Parabéns! O seu patrimônio simulado já ultrapassou a meta de renda de ${formatCurrency(targetMonthly)}/mês!</span>`;
+            } else {
+                fireGoalRemainingText.innerHTML = `Faltam <strong>${formatCurrency(remaining)}</strong> para conquistar esta renda com total tranquilidade pela Regra dos 4%.`;
+            }
+        }
+    }
+
+    // Gráfico de Sustentabilidade da Renda por 30 Anos
+    function renderFireProjectionChart(result) {
+        if (!fireChartCanvas || !result) return;
+        const ctxFire = fireChartCanvas.getContext('2d');
+        if (!ctxFire) return;
+
+        const balance = result.summary.finalBalance;
+        const monthlyRate = result.summary.monthlyPassiveIncome / (balance || 1);
+        const withdrawal = fireWithdrawalInput ? parseBRL(fireWithdrawalInput.value) : (result.summary.monthlyPassiveIncome);
+
+        // Projetar 30 anos (ano 0 a ano 30)
+        const yearsLabels = [];
+        const balancesData = [];
+
+        let currentBal = balance;
+        yearsLabels.push('Hoje');
+        balancesData.push(Math.round(currentBal));
+
+        for (let y = 1; y <= 30; y++) {
+            for (let m = 1; m <= 12; m++) {
+                if (currentBal > 0) {
+                    const interest = currentBal * monthlyRate;
+                    currentBal = currentBal + interest - withdrawal;
+                    if (currentBal < 0) currentBal = 0;
+                }
+            }
+            yearsLabels.push(`Ano ${y}`);
+            balancesData.push(Math.round(currentBal));
+        }
+
+        const isGrowing = balancesData[balancesData.length - 1] >= balance;
+        const isDepleted = balancesData[balancesData.length - 1] === 0;
+
+        let lineColor = '#10b981'; // verde
+        let gradientColor = 'rgba(16, 185, 129, 0.15)';
+        if (isDepleted) {
+            lineColor = '#ef4444'; // vermelho
+            gradientColor = 'rgba(239, 68, 68, 0.15)';
+        } else if (!isGrowing) {
+            lineColor = '#f59e0b'; // amarelo/âmbar
+            gradientColor = 'rgba(245, 158, 11, 0.15)';
+        }
+
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const textColor = currentTheme === 'dark' ? '#94a3b8' : '#64748b';
+        const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+
+        if (fireChartInstance) {
+            fireChartInstance.destroy();
+        }
+
+        fireChartInstance = new Chart(ctxFire, {
+            type: 'line',
+            data: {
+                labels: yearsLabels,
+                datasets: [{
+                    label: 'Patrimônio Restante',
+                    data: balancesData,
+                    borderColor: lineColor,
+                    backgroundColor: gradientColor,
+                    fill: true,
+                    tension: 0.25,
+                    borderWidth: 2.5,
+                    pointRadius: 2,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return ` Saldo Projetado: ${formatCurrency(context.parsed.y)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { color: textColor, maxTicksLimit: 10, font: { family: 'Plus Jakarta Sans', size: 10 } }
+                    },
+                    y: {
+                        grid: { color: gridColor },
+                        ticks: {
+                            color: textColor,
+                            font: { family: 'Plus Jakarta Sans', size: 10 },
+                            callback: function(val) {
+                                if (val >= 1000000) return `R$ ${(val / 1000000).toFixed(1)}M`;
+                                if (val >= 1000) return `R$ ${(val / 1000).toFixed(0)}k`;
+                                return `R$ ${val}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Clique nos cards de estratégias (Perpétua, 4%, 3%, 5%)
+    document.querySelectorAll('[data-fire-strategy]').forEach(card => {
+        card.addEventListener('click', () => {
+            if (!lastSimulationResult || !fireWithdrawalInput) return;
+            const strategy = card.getAttribute('data-fire-strategy');
+            const balance = lastSimulationResult.summary.finalBalance;
+            const passiveIncome = lastSimulationResult.summary.monthlyPassiveIncome;
+
+            let amount = passiveIncome;
+            if (strategy === 'rule4') amount = (balance * 0.04) / 12;
+            if (strategy === 'rule3') amount = (balance * 0.03) / 12;
+            if (strategy === 'rule5') amount = (balance * 0.05) / 12;
+
+            document.querySelectorAll('[data-fire-strategy]').forEach(c => c.classList.remove('active-strategy'));
+            card.classList.add('active-strategy');
+
+            fireWithdrawalInput.value = formatBRLValue(Math.round(amount));
+            calculateFireDepletion();
+            renderFireProjectionChart(lastSimulationResult);
+        });
+    });
+
+    // Chips de retirada rápida (R$ 3k, 5k, etc)
+    document.querySelectorAll('[data-quick-withdrawal]').forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (!lastSimulationResult || !fireWithdrawalInput) return;
+            const w = chip.getAttribute('data-quick-withdrawal');
+            const balance = lastSimulationResult.summary.finalBalance;
+            let amount = lastSimulationResult.summary.monthlyPassiveIncome;
+            if (w === 'rule4') amount = (balance * 0.04) / 12;
+
+            fireWithdrawalInput.value = formatBRLValue(Math.round(amount));
+            calculateFireDepletion();
+            renderFireProjectionChart(lastSimulationResult);
+        });
+    });
+
+    document.querySelectorAll('[data-quick-amount]').forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (!fireWithdrawalInput) return;
+            const amount = chip.getAttribute('data-quick-amount');
+            fireWithdrawalInput.value = formatBRLValue(amount);
+            calculateFireDepletion();
+            if (lastSimulationResult) renderFireProjectionChart(lastSimulationResult);
+        });
+    });
+
+    // Digitação no input de retirada
+    if (fireWithdrawalInput) {
+        fireWithdrawalInput.addEventListener('input', () => {
+            formatCurrencyInput(fireWithdrawalInput);
+            calculateFireDepletion();
+            if (lastSimulationResult) renderFireProjectionChart(lastSimulationResult);
+        });
+        fireWithdrawalInput.addEventListener('blur', () => {
+            if (fireWithdrawalInput.value.endsWith(',')) {
+                fireWithdrawalInput.value = fireWithdrawalInput.value.slice(0, -1);
+            }
+        });
+    }
+
+    // Calculadora reversa (digitação e chips)
+    if (fireTargetIncomeInput) {
+        fireTargetIncomeInput.addEventListener('input', () => {
+            formatCurrencyInput(fireTargetIncomeInput);
+            calculateFireGoal();
+        });
+        fireTargetIncomeInput.addEventListener('blur', () => {
+            if (fireTargetIncomeInput.value.endsWith(',')) {
+                fireTargetIncomeInput.value = fireTargetIncomeInput.value.slice(0, -1);
+            }
+        });
+    }
+
+    document.querySelectorAll('[data-quick-target]').forEach(chip => {
+        chip.addEventListener('click', () => {
+            if (!fireTargetIncomeInput) return;
+            const target = chip.getAttribute('data-quick-target');
+            fireTargetIncomeInput.value = formatBRLValue(target);
+            calculateFireGoal();
+        });
+    });
+
+    // Modal de Retiradas Legado (sincronização)
     if (customWithdrawalInput) {
-        customWithdrawalInput.addEventListener('input', calculateDepletion);
-    }
-
-    if (btnOpenWithdrawal) {
-        btnOpenWithdrawal.addEventListener('click', () => {
-            if (withdrawalModal) {
-                withdrawalModal.show();
+        customWithdrawalInput.addEventListener('input', () => {
+            formatCurrencyInput(customWithdrawalInput);
+            if (fireWithdrawalInput) {
+                fireWithdrawalInput.value = customWithdrawalInput.value;
+                calculateFireDepletion();
             }
         });
     }
@@ -618,8 +1082,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Resetar
     if (btnReset) {
         btnReset.addEventListener('click', () => {
-            initialInput.value = '1000';
-            monthlyInput.value = '1000';
+            initialInput.value = '1.000';
+            monthlyInput.value = '1.000';
             rateInput.value = '8';
             document.querySelector('input[name="rateType"][value="yearly"]').checked = true;
             periodInput.value = '20';
@@ -629,14 +1093,49 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Eventos de entrada em tempo real
-    [initialInput, monthlyInput, rateInput, periodInput].forEach(inp => {
-        if (inp) {
-            inp.addEventListener('input', () => {
-                calculateAndRender();
-            });
-        }
-    });
+    // Eventos de entrada em tempo real com formatação de pontos e vírgulas
+    if (initialInput) {
+        initialInput.addEventListener('input', () => {
+            formatCurrencyInput(initialInput);
+            calculateAndRender();
+        });
+        initialInput.addEventListener('blur', () => {
+            if (initialInput.value.endsWith(',')) {
+                initialInput.value = initialInput.value.slice(0, -1);
+            }
+        });
+    }
+
+    if (monthlyInput) {
+        monthlyInput.addEventListener('input', () => {
+            formatCurrencyInput(monthlyInput);
+            calculateAndRender();
+        });
+        monthlyInput.addEventListener('blur', () => {
+            if (monthlyInput.value.endsWith(',')) {
+                monthlyInput.value = monthlyInput.value.slice(0, -1);
+            }
+        });
+    }
+
+    if (rateInput) {
+        rateInput.addEventListener('input', () => {
+            formatRateInputField(rateInput);
+            calculateAndRender();
+        });
+        rateInput.addEventListener('blur', () => {
+            if (rateInput.value.endsWith(',')) {
+                rateInput.value = rateInput.value.slice(0, -1);
+            }
+        });
+    }
+
+    if (periodInput) {
+        periodInput.addEventListener('input', () => {
+            periodInput.value = periodInput.value.replace(/\D/g, '');
+            calculateAndRender();
+        });
+    }
 
     if (onlyNetSwitch) {
         onlyNetSwitch.addEventListener('change', () => {
@@ -657,21 +1156,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ler parâmetros da URL se existirem na inicialização
     function loadFromURL() {
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('inicial')) initialInput.value = urlParams.get('inicial');
-        if (urlParams.has('mensal')) monthlyInput.value = urlParams.get('mensal');
+        if (urlParams.has('inicial')) {
+            const val = parseBRL(urlParams.get('inicial'));
+            initialInput.value = formatBRLValue(val);
+        }
+        if (urlParams.has('mensal')) {
+            const val = parseBRL(urlParams.get('mensal'));
+            monthlyInput.value = formatBRLValue(val);
+        }
         if (urlParams.has('taxa')) {
             const rawRate = parseBRL(urlParams.get('taxa'));
             if (rawRate > 200) {
-                rateInput.value = (rawRate / 100).toFixed(2).replace(/\.00$/, '');
+                rateInput.value = (rawRate / 100).toFixed(2).replace('.', ',');
             } else if (rawRate > 0) {
-                rateInput.value = rawRate;
+                rateInput.value = formatRateValue(rawRate);
             }
         }
         if (urlParams.has('tipoTaxa')) {
             const r = document.querySelector(`input[name="rateType"][value="${urlParams.get('tipoTaxa')}"]`);
             if (r) r.checked = true;
         }
-        if (urlParams.has('periodo')) periodInput.value = urlParams.get('periodo');
+        if (urlParams.has('periodo')) periodInput.value = urlParams.get('periodo').replace(/\D/g, '');
         if (urlParams.has('tipoPeriodo')) {
             const p = document.querySelector(`input[name="periodType"][value="${urlParams.get('tipoPeriodo')}"]`);
             if (p) p.checked = true;
@@ -747,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.addEventListener('click', () => {
             const rate = card.getAttribute('data-apply-rate');
             if (rate) {
-                rateInput.value = rate;
+                rateInput.value = formatRateValue(rate);
                 const yearlyRadio = document.querySelector('input[name="rateType"][value="yearly"]');
                 if (yearlyRadio) yearlyRadio.checked = true;
                 calculateAndRender();

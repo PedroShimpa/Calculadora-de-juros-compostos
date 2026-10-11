@@ -161,7 +161,7 @@ require_once __DIR__ . '/includes/header.php';
                         </label>
                         <div class="input-group">
                             <span class="input-group-text">R$</span>
-                            <input type="number" step="any" min="0" class="form-control form-control-lg fw-semibold" id="initialValue" name="initialValue" value="<?php echo htmlspecialchars((string)$initialVal); ?>" placeholder="0,00">
+                            <input type="text" inputmode="decimal" class="form-control form-control-lg fw-semibold" id="initialValue" name="initialValue" value="<?php echo ($initialVal == (int)$initialVal) ? number_format($initialVal, 0, ',', '.') : number_format($initialVal, 2, ',', '.'); ?>" placeholder="0,00" autocomplete="off">
                         </div>
                     </div>
 
@@ -173,7 +173,7 @@ require_once __DIR__ . '/includes/header.php';
                         </label>
                         <div class="input-group">
                             <span class="input-group-text">R$</span>
-                            <input type="number" step="any" min="0" class="form-control form-control-lg fw-semibold" id="monthlyValue" name="monthlyValue" value="<?php echo htmlspecialchars((string)$monthlyVal); ?>" placeholder="0,00">
+                            <input type="text" inputmode="decimal" class="form-control form-control-lg fw-semibold" id="monthlyValue" name="monthlyValue" value="<?php echo ($monthlyVal == (int)$monthlyVal) ? number_format($monthlyVal, 0, ',', '.') : number_format($monthlyVal, 2, ',', '.'); ?>" placeholder="0,00" autocomplete="off">
                         </div>
                     </div>
 
@@ -190,7 +190,7 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                         </div>
                         <div class="input-group">
-                            <input type="number" step="any" min="0" class="form-control form-control-lg fw-semibold" id="interestRate" name="interestRate" value="<?php echo htmlspecialchars((string)$rateVal); ?>" placeholder="0,00">
+                            <input type="text" inputmode="decimal" class="form-control form-control-lg fw-semibold" id="interestRate" name="interestRate" value="<?php echo str_replace('.', ',', (string)$rateVal); ?>" placeholder="0,00" autocomplete="off">
                             <span class="input-group-text">%</span>
                         </div>
                         <div class="d-flex flex-wrap gap-1 mt-2">
@@ -215,7 +215,7 @@ require_once __DIR__ . '/includes/header.php';
                             </div>
                         </div>
                         <div class="input-group">
-                            <input type="number" min="1" max="1000" class="form-control form-control-lg fw-semibold" id="period" name="period" value="<?php echo htmlspecialchars((string)$periodVal); ?>" placeholder="1">
+                            <input type="text" inputmode="numeric" class="form-control form-control-lg fw-semibold" id="period" name="period" value="<?php echo htmlspecialchars((string)$periodVal); ?>" placeholder="1" autocomplete="off">
                             <span class="input-group-text"><i class="bi bi-clock-history"></i></span>
                         </div>
                         <div class="d-flex flex-wrap gap-1 mt-2">
@@ -259,9 +259,9 @@ require_once __DIR__ . '/includes/header.php';
                             <span>Calcular Rendimento</span>
                         </button>
                         
-                        <button type="button" class="btn btn-secondary-custom d-flex align-items-center justify-content-center gap-2" id="btnOpenWithdrawal">
-                            <i class="bi bi-cash-stack text-warning"></i>
-                            <span>Simular Retiradas Mensais</span>
+                        <button type="button" class="btn btn-fire-action d-flex align-items-center justify-content-center gap-2" id="btnOpenWithdrawal">
+                            <i class="bi bi-cash-coin fs-5"></i>
+                            <span>Simular Viver de Renda & FIRE</span>
                         </button>
                     </div>
 
@@ -336,15 +336,20 @@ require_once __DIR__ . '/includes/header.php';
 
                 <!-- Renda Passiva Estimada -->
                 <div class="col-sm-6">
-                    <div class="kpi-card kpi-income">
+                    <div class="kpi-card kpi-income" style="cursor: pointer;" id="kpiIncomeCard" title="Clique para abrir o simulador de Viver de Renda & FIRE">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="kpi-label">Renda Mensal Estimada</span>
-                            <i class="bi bi-arrow-repeat text-warning fs-5"></i>
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill small">FIRE</span>
                         </div>
                         <div class="kpi-value text-warning" id="kpiPassiveIncome">
                             R$ <?php echo number_format($summary['monthlyPassiveIncome'], 2, ',', '.'); ?>
                         </div>
-                        <small class="text-muted">Viver de renda sem tocar no patrimônio</small>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <small class="text-muted">Sem tocar no patrimônio</small>
+                            <span class="text-warning small fw-semibold d-inline-flex align-items-center gap-1">
+                                Ver FIRE <i class="bi bi-arrow-right-short"></i>
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -392,10 +397,15 @@ require_once __DIR__ . '/includes/header.php';
                                 <i class="bi bi-calendar3 me-1"></i> Detalhado Mês a Mês
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link py-1 px-3 fw-semibold small text-warning" id="tab-viver-renda" data-bs-toggle="tab" data-bs-target="#content-viver-renda" type="button" role="tab">
+                                <i class="bi bi-cash-coin me-1"></i> Viver de Renda & FIRE
+                            </button>
+                        </li>
                     </ul>
 
                     <!-- Alternador de Visão do Gráfico -->
-                    <div class="form-check form-switch small mb-0">
+                    <div class="form-check form-switch small mb-0" id="chartViewToggleWrapper">
                         <input class="form-check-input" type="checkbox" id="chartViewToggle" checked>
                         <label class="form-check-label text-muted" for="chartViewToggle">Visão Anual no Gráfico</label>
                     </div>
@@ -474,6 +484,212 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </div>
 
+                    <!-- Aba 4: Viver de Renda & FIRE -->
+                    <div class="tab-pane fade" id="content-viver-renda" role="tabpanel">
+                        
+                        <!-- Top Banner com Resumo do Patrimônio Base -->
+                        <div class="fire-header-card p-3 p-md-4 mb-4">
+                            <div class="row align-items-center gy-3">
+                                <div class="col-md-7">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-warning text-dark fw-bold px-2 py-1">FIRE & Aposentadoria</span>
+                                        <span class="text-muted small">Independência Financeira</span>
+                                    </div>
+                                    <h3 class="h5 fw-bold mb-1">Simulador de Renda Passiva & Retiradas Seguras</h3>
+                                    <p class="text-muted small mb-0">
+                                        Projeções com base no montante acumulado de <strong class="text-primary fire-display-patrimony">R$ <?php echo number_format($summary['finalBalance'], 2, ',', '.'); ?></strong> ao término do período simulado.
+                                    </p>
+                                </div>
+                                <div class="col-md-5 text-md-end">
+                                    <div class="d-inline-block text-start p-2 px-3 rounded-3 bg-body-tertiary border">
+                                        <span class="text-muted small d-block">Rendimento Mensal Perpétuo</span>
+                                        <strong class="fs-4 text-success fire-display-perpetual">R$ <?php echo number_format($summary['monthlyPassiveIncome'], 2, ',', '.'); ?></strong>
+                                        <small class="text-muted d-block" style="font-size: 0.72rem;">100% livre sem consumir o principal</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4 Cards de Estratégias Consagradas de Retirada -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold small text-uppercase text-muted">Estratégias Consagradas de Viver de Renda</span>
+                                <small class="text-muted">Clique em um card para testar o valor</small>
+                            </div>
+                            <div class="row g-3">
+                                
+                                <!-- Estratégia 1: Renda Perpétua Real -->
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="fire-strategy-card" data-fire-strategy="perpetual">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">100% Perpétua</span>
+                                            <i class="bi bi-infinity text-success fs-5"></i>
+                                        </div>
+                                        <div class="fw-bold text-success fs-5 mb-1" id="fireCardPerpetualVal">
+                                            R$ <?php echo number_format($summary['monthlyPassiveIncome'], 2, ',', '.'); ?>
+                                        </div>
+                                        <div class="fw-semibold small text-body">Apenas os Juros</div>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">
+                                            O patrimônio principal continua intocado e crescendo indefinidamente.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Estratégia 2: Regra dos 4% (FIRE) -->
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="fire-strategy-card" data-fire-strategy="rule4">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Regra dos 4%</span>
+                                            <i class="bi bi-shield-check text-warning fs-5"></i>
+                                        </div>
+                                        <div class="fw-bold text-warning fs-5 mb-1" id="fireCardRule4Val">
+                                            R$ <?php echo number_format($summary['rule4PercentMonthly'], 2, ',', '.'); ?>
+                                        </div>
+                                        <div class="fw-semibold small text-body">Padrão Trinity (FIRE)</div>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">
+                                            Padrão global: 4% ao ano em 12 saques mensais seguros ajustados.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Estratégia 3: Regra dos 3% (Ultra Segura) -->
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="fire-strategy-card" data-fire-strategy="rule3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">Regra dos 3%</span>
+                                            <i class="bi bi-lock-fill text-info fs-5"></i>
+                                        </div>
+                                        <div class="fw-bold text-info fs-5 mb-1" id="fireCardRule3Val">
+                                            R$ <?php echo number_format(($summary['finalBalance'] * 0.03) / 12, 2, ',', '.'); ?>
+                                        </div>
+                                        <div class="fw-semibold small text-body">Ultra Conservadora</div>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">
+                                            Ideal para aposentadoria antes dos 45 anos, com risco zero de ruína.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Estratégia 4: Regra dos 5% (Equilibrada) -->
+                                <div class="col-sm-6 col-lg-3">
+                                    <div class="fire-strategy-card" data-fire-strategy="rule5">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">Regra dos 5%</span>
+                                            <i class="bi bi-graph-up text-primary fs-5"></i>
+                                        </div>
+                                        <div class="fw-bold text-primary fs-5 mb-1" id="fireCardRule5Val">
+                                            R$ <?php echo number_format(($summary['finalBalance'] * 0.05) / 12, 2, ',', '.'); ?>
+                                        </div>
+                                        <div class="fw-semibold small text-body">Saque Equilibrado</div>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">
+                                            Para horizontes de 20 a 30 anos com aproveitamento maior do capital.
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Simulador de Retiradas Personalizadas & Análise de Sobrevivência -->
+                        <div class="p-3 p-md-4 rounded-3 bg-body-tertiary border mb-4">
+                            <h4 class="h6 fw-bold mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-sliders text-warning"></i>
+                                <span>Simule sua Retirada Mensal Desejada</span>
+                            </h4>
+
+                            <div class="row g-3 align-items-end mb-3">
+                                <div class="col-md-6">
+                                    <label for="fireWithdrawalInput" class="form-label small fw-semibold text-muted">Quanto você deseja resgatar por mês?</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text fw-bold">R$</span>
+                                        <input type="text" inputmode="decimal" class="form-control fw-bold" id="fireWithdrawalInput" placeholder="0,00" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="quick-withdrawal-chip" data-quick-withdrawal="perpetual">Renda Perpétua</span>
+                                        <span class="quick-withdrawal-chip" data-quick-withdrawal="rule4">Regra 4%</span>
+                                        <span class="quick-withdrawal-chip" data-quick-amount="3000">R$ 3.000</span>
+                                        <span class="quick-withdrawal-chip" data-quick-amount="5000">R$ 5.000</span>
+                                        <span class="quick-withdrawal-chip" data-quick-amount="10000">R$ 10.000</span>
+                                        <span class="quick-withdrawal-chip" data-quick-amount="20000">R$ 20.000</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Box de Diagnóstico em Tempo Real -->
+                            <div id="fireDepletionFeedback" class="mt-3">
+                                <!-- Preenchido dinamicamente pelo JS -->
+                            </div>
+
+                            <!-- Gráfico de Sustentabilidade de Capital ao Longo de 30 Anos -->
+                            <div class="mt-4 pt-3 border-top">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold small text-muted">Projeção do Patrimônio com Esta Retirada (Próximos 30 Anos)</span>
+                                    <span class="badge bg-secondary-subtle text-secondary small" id="fireChartHorizonLabel">Horizonte: 30 anos</span>
+                                </div>
+                                <div style="height: 240px; position: relative;">
+                                    <canvas id="fireProjectionChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Calculadora Reversa: "Qual é a sua Meta de Aposentadoria?" -->
+                        <div class="p-3 p-md-4 rounded-3 border bg-body-tertiary">
+                            <div class="row gy-3 align-items-center">
+                                <div class="col-lg-6">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge bg-primary text-white">Calculadora Reversa de Liberdade Financeira</span>
+                                    </div>
+                                    <h5 class="fw-bold mb-1">Quanto você precisa ter para parar de trabalhar?</h5>
+                                    <p class="text-muted small mb-3">
+                                        Defina quanto quer receber mensalmente e descubra o patrimônio exato necessário e quanto falta para sua meta.
+                                    </p>
+                                    <div class="mb-2">
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" inputmode="decimal" class="form-control fw-bold" id="fireTargetIncomeInput" value="5.000" placeholder="5.000" autocomplete="off">
+                                            <span class="input-group-text">/mês</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <span class="quick-withdrawal-chip" data-quick-target="3000">Meta: R$ 3k</span>
+                                        <span class="quick-withdrawal-chip" data-quick-target="5000">Meta: R$ 5k</span>
+                                        <span class="quick-withdrawal-chip" data-quick-target="10000">Meta: R$ 10k</span>
+                                        <span class="quick-withdrawal-chip" data-quick-target="15000">Meta: R$ 15k</span>
+                                        <span class="quick-withdrawal-chip" data-quick-target="20000">Meta: R$ 20k</span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="p-3 rounded-3 bg-body border shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="text-muted small fw-semibold">Patrimônio Necessário (Regra dos 4%)</span>
+                                            <strong class="text-warning fs-5" id="fireTargetPatrimony4">R$ 1.500.000,00</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <span class="text-muted small">Patrimônio Necessário (Renda Perpétua)</span>
+                                            <span class="fw-semibold text-success small" id="fireTargetPatrimonyPerp">R$ 775.000,00</span>
+                                        </div>
+                                        
+                                        <!-- Barra de Progresso da Meta -->
+                                        <div class="mb-2">
+                                            <div class="d-flex justify-content-between small fw-bold mb-1">
+                                                <span>Progresso da sua Meta</span>
+                                                <span class="text-success" id="fireProgressPercent">39.5%</span>
+                                            </div>
+                                            <div class="fire-progress">
+                                                <div class="fire-progress-bar" id="fireProgressBar" style="width: 39.5%;"></div>
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted" id="fireGoalRemainingText">
+                                            Faltam <strong>R$ 907.052,78</strong> para conquistar esta renda com segurança.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
                 </div>
 
             </div>
@@ -525,7 +741,7 @@ require_once __DIR__ . '/includes/header.php';
                         <label for="customWithdrawalInput" class="form-label fw-bold">Testar Retirada Personalizada por Mês (R$)</label>
                         <div class="input-group">
                             <span class="input-group-text">R$</span>
-                            <input type="number" class="form-control form-control-lg fw-semibold" id="customWithdrawalInput" placeholder="Valor desejado por mês">
+                            <input type="text" inputmode="decimal" class="form-control form-control-lg fw-semibold" id="customWithdrawalInput" placeholder="0,00" autocomplete="off">
                         </div>
                     </div>
 

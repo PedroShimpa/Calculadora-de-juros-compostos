@@ -34,11 +34,28 @@ try {
         }
     }
 
-    $initialValue = isset($input['initialValue']) ? (float)$input['initialValue'] : 1000.0;
-    $monthlyValue = isset($input['monthlyValue']) ? (float)$input['monthlyValue'] : 1000.0;
-    $interestRate = isset($input['interestRate']) ? (float)$input['interestRate'] : 8.0;
+    function parseBRL_API($val, float $default = 0.0): float {
+        if ($val === null || $val === '') return $default;
+        if (is_numeric($val)) return (float)$val;
+        $str = trim((string)$val);
+        if (strpos($str, ',') !== false) {
+            $str = str_replace('.', '', $str);
+            $str = str_replace(',', '.', $str);
+        } else {
+            $dotCount = substr_count($str, '.');
+            if ($dotCount > 1 || ($dotCount === 1 && strlen(substr($str, strrpos($str, '.') + 1)) === 3)) {
+                $str = str_replace('.', '', $str);
+            }
+        }
+        $str = preg_replace('/[^\d.-]/', '', $str);
+        return is_numeric($str) ? (float)$str : $default;
+    }
+
+    $initialValue = isset($input['initialValue']) ? parseBRL_API($input['initialValue'], 1000.0) : 1000.0;
+    $monthlyValue = isset($input['monthlyValue']) ? parseBRL_API($input['monthlyValue'], 1000.0) : 1000.0;
+    $interestRate = isset($input['interestRate']) ? parseBRL_API($input['interestRate'], 8.0) : 8.0;
     $rateType = isset($input['rateType']) ? (string)$input['rateType'] : 'yearly';
-    $period = isset($input['period']) ? (int)$input['period'] : 20;
+    $period = isset($input['period']) ? (int)preg_replace('/\D/', '', (string)$input['period']) : 20;
     $periodType = isset($input['periodType']) ? (string)$input['periodType'] : 'years';
     $onlyNet = isset($input['onlyNet']) ? filter_var($input['onlyNet'], FILTER_VALIDATE_BOOLEAN) : false;
     $taxRate = isset($input['taxRate']) ? (float)$input['taxRate'] : 15.0;

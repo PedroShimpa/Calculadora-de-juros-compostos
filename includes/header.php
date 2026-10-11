@@ -121,9 +121,23 @@ declare(strict_types=1);
             }
           ]
         }
-      ]
     }
     </script>
+
+  <?php 
+  $gaTag = getenv('GOOGLE_ANALYTICS_TAG') ?: ($_ENV['GOOGLE_ANALYTICS_TAG'] ?? ($_SERVER['GOOGLE_ANALYTICS_TAG'] ?? 'G-FPTRH0XXBC'));
+  if (!empty($gaTag)): 
+  ?>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo htmlspecialchars($gaTag); ?>"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', '<?php echo htmlspecialchars($gaTag); ?>');
+  </script>
+  <?php endif; ?>
 </head>
 
 <body>

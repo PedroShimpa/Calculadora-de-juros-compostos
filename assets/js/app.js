@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Referências aos Elementos do DOM
     const initialInput = document.getElementById('initialValue');
     const monthlyInput = document.getElementById('monthlyValue');
+    const annualIncreaseInput = document.getElementById('annualIncrease');
     const rateInput = document.getElementById('interestRate');
     const rateTypeInputs = document.querySelectorAll('input[name="rateType"]');
     const periodInput = document.getElementById('period');
@@ -277,10 +278,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Presets rápidos de aumento anual do aporte
+    document.querySelectorAll('[data-preset-annual-increase]').forEach(badge => {
+        badge.addEventListener('click', () => {
+            const val = badge.getAttribute('data-preset-annual-increase');
+            if (annualIncreaseInput) {
+                annualIncreaseInput.value = formatRateValue(val);
+                calculateAndRender();
+            }
+        });
+    });
+
     // Lógica Financeira Matemática no Frontend (Instantânea)
-    function simulate(initialVal, monthlyVal, rate, rateType, periodVal, periodType, onlyNet = false, taxRate = 15.0, inflationRate = 4.58) {
+    function simulate(initialVal, monthlyVal, rate, rateType, periodVal, periodType, onlyNet = false, taxRate = 15.0, inflationRate = 4.58, annualIncrease = 0.0) {
         const initial = Math.max(0, initialVal);
         const monthly = Math.max(0, monthlyVal);
+        const increaseRate = Math.max(0, annualIncrease);
         const interestRate = Math.max(0, rate);
         const period = Math.max(1, periodVal);
 
@@ -320,17 +333,22 @@ document.addEventListener('DOMContentLoaded', () => {
         let investedInYear = 0;
 
         for (let m = 1; m <= totalMonths; m++) {
+            const yearIndex = Math.floor((m - 1) / 12);
+            const currentMonthlyDeposit = increaseRate > 0
+                ? monthly * Math.pow(1 + (increaseRate / 100), yearIndex)
+                : monthly;
+
             const interestThisMonth = balance * monthlyRate;
             totalInterest += interestThisMonth;
             accumulatedInterestYear += interestThisMonth;
 
-            balance += interestThisMonth + monthly;
-            totalInvested += monthly;
-            investedInYear += monthly;
+            balance += interestThisMonth + currentMonthlyDeposit;
+            totalInvested += currentMonthlyDeposit;
+            investedInYear += currentMonthlyDeposit;
 
             monthlyTimeline.push({
                 month: m,
-                deposit: monthly,
+                deposit: currentMonthlyDeposit,
                 interestThisMonth: interestThisMonth,
                 totalInterest: totalInterest,
                 totalInvested: totalInvested,
@@ -359,6 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
             parameters: {
                 initialValue: initial,
                 monthlyValue: monthly,
+                annualIncrease: increaseRate,
                 interestRate: interestRate,
                 rateType: rateType,
                 period: period,
@@ -389,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const allowConfetti = options.allowConfetti === true;
         const initialVal = parseBRL(initialInput.value);
         const monthlyVal = parseBRL(monthlyInput.value);
+        const annualIncreaseVal = annualIncreaseInput ? parseBRL(annualIncreaseInput.value) : 0;
         const rateVal = parseBRL(rateInput.value);
         const rateType = document.querySelector('input[name="rateType"]:checked')?.value || 'yearly';
         const periodVal = parseInt(periodInput.value, 10) || 1;
@@ -403,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
             kpiFinalBalanceSubtitle.textContent = onlyNet ? 'Poder de compra real descontando IR e IPCA' : 'Montante acumulado ao fim do período';
         }
 
-        const result = simulate(initialVal, monthlyVal, rateVal, rateType, periodVal, periodType, onlyNet, 15.0, currentIpcaRate);
+        const result = simulate(initialVal, monthlyVal, rateVal, rateType, periodVal, periodType, onlyNet, 15.0, currentIpcaRate, annualIncreaseVal);
         lastSimulationResult = result;
 
         renderSummary(result.summary, allowConfetti);
@@ -1051,6 +1071,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = new URL(window.location);
         url.searchParams.set('inicial', params.initialValue);
         url.searchParams.set('mensal', params.monthlyValue);
+        if (params.annualIncrease > 0) {
+            url.searchParams.set('aumentoAnual', params.annualIncrease);
+        } else {
+            url.searchParams.delete('aumentoAnual');
+        }
         url.searchParams.set('taxa', params.interestRate);
         url.searchParams.set('tipoTaxa', params.rateType);
         url.searchParams.set('periodo', params.period);
@@ -1084,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReset.addEventListener('click', () => {
             initialInput.value = '1.000';
             monthlyInput.value = '1.000';
+            if (annualIncreaseInput) annualIncreaseInput.value = '0';
             rateInput.value = '8';
             document.querySelector('input[name="rateType"][value="yearly"]').checked = true;
             periodInput.value = '20';
@@ -1114,6 +1140,18 @@ document.addEventListener('DOMContentLoaded', () => {
         monthlyInput.addEventListener('blur', () => {
             if (monthlyInput.value.endsWith(',')) {
                 monthlyInput.value = monthlyInput.value.slice(0, -1);
+            }
+        });
+    }
+
+    if (annualIncreaseInput) {
+        annualIncreaseInput.addEventListener('input', () => {
+            formatRateInputField(annualIncreaseInput);
+            calculateAndRender();
+        });
+        annualIncreaseInput.addEventListener('blur', () => {
+            if (annualIncreaseInput.value.endsWith(',')) {
+                annualIncreaseInput.value = annualIncreaseInput.value.slice(0, -1);
             }
         });
     }
@@ -1163,6 +1201,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (urlParams.has('mensal')) {
             const val = parseBRL(urlParams.get('mensal'));
             monthlyInput.value = formatBRLValue(val);
+        }
+        if (urlParams.has('aumentoAnual') && annualIncreaseInput) {
+            const val = parseBRL(urlParams.get('aumentoAnual'));
+            annualIncreaseInput.value = formatRateValue(val);
+        } else if (urlParams.has('annualIncrease') && annualIncreaseInput) {
+            const val = parseBRL(urlParams.get('annualIncrease'));
+            annualIncreaseInput.value = formatRateValue(val);
         }
         if (urlParams.has('taxa')) {
             const rawRate = parseBRL(urlParams.get('taxa'));
@@ -1241,6 +1286,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (presetCdiBadge) {
                 presetCdiBadge.setAttribute('data-preset-rate', cdi);
                 presetCdiBadge.innerHTML = `<i class="bi bi-broadcast text-primary me-1"></i>CDI Atual (${cdi.toFixed(2).replace('.', ',')}%)`;
+            }
+
+            const presetIpcaIncreaseBadge = document.getElementById('presetIpcaIncreaseBadge');
+            if (presetIpcaIncreaseBadge) {
+                presetIpcaIncreaseBadge.setAttribute('data-preset-annual-increase', ipca);
+                presetIpcaIncreaseBadge.innerHTML = `<i class="bi bi-graph-up-arrow text-warning me-1"></i>IPCA (${ipca.toFixed(2).replace('.', ',')}%)`;
             }
         } catch (e) {
             console.warn('BrasilAPI fallback ativo:', e);

@@ -24,7 +24,7 @@ use App\CompoundInterestCalculator;
 try {
     // Obter dados tanto via GET quanto POST (JSON ou form-data)
     $input = $_GET;
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $raw = file_get_contents('php://input');
         $json = json_decode($raw, true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
@@ -60,6 +60,9 @@ try {
     $onlyNet = isset($input['onlyNet']) ? filter_var($input['onlyNet'], FILTER_VALIDATE_BOOLEAN) : false;
     $taxRate = isset($input['taxRate']) ? (float)$input['taxRate'] : 15.0;
     $inflationRate = isset($input['inflationRate']) ? (float)$input['inflationRate'] : 4.58;
+    $annualContributionIncrease = isset($input['annualContributionIncrease'])
+        ? parseBRL_API($input['annualContributionIncrease'], 0.0)
+        : (isset($input['aumentoAnual']) ? parseBRL_API($input['aumentoAnual'], 0.0) : 0.0);
 
     // Validações básicas de segurança
     if ($period <= 0 || $period > 1000) {
@@ -67,6 +70,9 @@ try {
     }
     if ($interestRate < 0 || $interestRate > 500) {
         throw new InvalidArgumentException('A taxa de juros deve estar entre 0% e 500%.');
+    }
+    if ($annualContributionIncrease < 0 || $annualContributionIncrease > 500) {
+        throw new InvalidArgumentException('O aumento anual do aporte deve estar entre 0% e 500%.');
     }
 
     $calculator = new CompoundInterestCalculator(
@@ -78,7 +84,8 @@ try {
         $periodType,
         $onlyNet,
         $taxRate,
-        $inflationRate
+        $inflationRate,
+        $annualContributionIncrease
     );
 
     $result = $calculator->calculate();

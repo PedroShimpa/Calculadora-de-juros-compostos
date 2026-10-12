@@ -21,6 +21,7 @@ class CompoundInterestCalculator
     private bool $onlyNet;
     private float $taxRate; // IR médio (padrão 15%)
     private float $inflationRate; // IPCA (padrão 4.58%)
+    private float $annualContributionIncrease; // Aumento percentual anual no aporte (% a.a.)
 
     public function __construct(
         float $initialValue = 1000.0,
@@ -31,7 +32,8 @@ class CompoundInterestCalculator
         string $periodType = 'years',
         bool $onlyNet = false,
         float $taxRate = 15.0,
-        float $inflationRate = 4.58
+        float $inflationRate = 4.58,
+        float $annualContributionIncrease = 0.0
     ) {
         $this->initialValue = max(0.0, $initialValue);
         $this->monthlyValue = max(0.0, $monthlyValue);
@@ -42,6 +44,7 @@ class CompoundInterestCalculator
         $this->onlyNet = $onlyNet;
         $this->taxRate = max(0.0, $taxRate);
         $this->inflationRate = max(0.0, $inflationRate);
+        $this->annualContributionIncrease = max(0.0, $annualContributionIncrease);
     }
 
     /**
@@ -124,19 +127,25 @@ class CompoundInterestCalculator
         $investedInYear = 0.0;
 
         for ($month = 1; $month <= $totalMonths; $month++) {
+            // Calcular o valor do aporte considerando reajuste anual a cada 12 meses
+            $yearIndex = (int)floor(($month - 1) / 12);
+            $currentMonthlyDeposit = ($this->annualContributionIncrease > 0.0)
+                ? $this->monthlyValue * pow(1.0 + ($this->annualContributionIncrease / 100.0), $yearIndex)
+                : $this->monthlyValue;
+
             // Rendimento sobre o saldo existente
             $interestThisMonth = $balance * $monthlyRate;
             $totalInterest += $interestThisMonth;
             $accumulatedInterestYear += $interestThisMonth;
 
             // Aporte mensal adicionado ao final do ciclo
-            $balance += $interestThisMonth + $this->monthlyValue;
-            $totalInvested += $this->monthlyValue;
-            $investedInYear += $this->monthlyValue;
+            $balance += $interestThisMonth + $currentMonthlyDeposit;
+            $totalInvested += $currentMonthlyDeposit;
+            $investedInYear += $currentMonthlyDeposit;
 
             $monthlyTimeline[] = [
                 'month' => $month,
-                'deposit' => $this->monthlyValue,
+                'deposit' => round($currentMonthlyDeposit, 2),
                 'interestThisMonth' => round($interestThisMonth, 2),
                 'totalInterest' => round($totalInterest, 2),
                 'totalInvested' => round($totalInvested, 2),
@@ -169,6 +178,7 @@ class CompoundInterestCalculator
             'parameters' => [
                 'initialValue' => $this->initialValue,
                 'monthlyValue' => $this->monthlyValue,
+                'annualContributionIncrease' => $this->annualContributionIncrease,
                 'interestRate' => $this->interestRate,
                 'rateType' => $this->rateType,
                 'period' => $this->period,

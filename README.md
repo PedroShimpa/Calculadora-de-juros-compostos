@@ -16,6 +16,7 @@ Inspirado pedagogicamente na ferramenta de referência do **[Investidor Sardinha
 ## 🚀 Funcionalidades Principais
 
 - ⚡ **Cálculos em Tempo Real (0ms de latência)**: Feedback instantâneo conforme você digita os parâmetros ou seleciona presets rápidos.
+- 📈 **Aumento Anual dos Aportes**: Simulação de progressão salarial ou correção pela inflação (IPCA), permitindo aumentar automaticamente o valor do aporte mensal a cada 12 meses.
 - 🇧🇷 **Indicadores Oficiais em Tempo Real (BrasilAPI)**: Integração com a [BrasilAPI](https://brasilapi.com.br/docs#tag/TAXAS) para exibição e aplicação com 1 clique das taxas **SELIC**, **CDI** e **IPCA** com cache inteligente.
 - 🎯 **Equivalência Geométrica Precisa**: Conversão rigorosa de taxas anuais em mensais através da fórmula $(1 + i_{ano})^{1/12} - 1$ (ex.: 12% a.a. = 0,95% a.m., 1% a.m. = 12,68% a.a.).
 - 📊 **Gráficos Interativos (Chart.js 4)**: Visualização em barras empilhadas e evolução patrimonial comparando o esforço de aportes próprios versus os rendimentos acumulados gerados pelos juros.

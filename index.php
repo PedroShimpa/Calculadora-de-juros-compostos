@@ -52,6 +52,7 @@ function parseBRL_PHP($val, float $default = 0.0): float {
 // Valores iniciais padrão ou vindos da URL (SSR fallback para SEO e navegação sem JS)
 $initialVal = isset($_GET['inicial']) ? parseBRL_PHP($_GET['inicial'], 1000.0) : 1000.0;
 $monthlyVal = isset($_GET['mensal']) ? parseBRL_PHP($_GET['mensal'], 1000.0) : 1000.0;
+$annualIncreaseVal = isset($_GET['aumentoAnual']) ? parseBRL_PHP($_GET['aumentoAnual'], 0.0) : (isset($_GET['annualIncrease']) ? parseBRL_PHP($_GET['annualIncrease'], 0.0) : 0.0);
 $rawTaxa    = isset($_GET['taxa']) ? parseBRL_PHP($_GET['taxa'], 8.0) : 8.0;
 $rateVal    = $rawTaxa > 200.0 ? round($rawTaxa / 100.0, 2) : $rawTaxa;
 $rateType   = isset($_GET['tipoTaxa']) ? (string)$_GET['tipoTaxa'] : 'yearly';
@@ -68,7 +69,8 @@ $calculator = new CompoundInterestCalculator(
     $periodType,
     $onlyNet,
     15.0,
-    $ipcaRate
+    $ipcaRate,
+    $annualIncreaseVal
 );
 
 $serverSimulation = $calculator->calculate();
@@ -174,6 +176,33 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="input-group">
                             <span class="input-group-text">R$</span>
                             <input type="text" inputmode="decimal" class="form-control form-control-lg fw-semibold" id="monthlyValue" name="monthlyValue" value="<?php echo ($monthlyVal == (int)$monthlyVal) ? number_format($monthlyVal, 0, ',', '.') : number_format($monthlyVal, 2, ',', '.'); ?>" placeholder="0,00" autocomplete="off">
+                        </div>
+                    </div>
+
+                    <!-- Aumento Anual do Aporte -->
+                    <div class="mb-3">
+                        <label for="annualIncrease" class="form-label d-flex justify-content-between align-items-center">
+                            <span class="d-inline-flex align-items-center gap-1">
+                                <span>Aumento anual do aporte</span>
+                                <span class="badge rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" 
+                                      style="width: 18px; height: 18px; font-size: 0.72rem; cursor: help;" 
+                                      data-bs-toggle="tooltip" 
+                                      data-bs-placement="top" 
+                                      title="Aumenta o valor do seu aporte mensal a cada 12 meses (ex: reajuste salarial ou correção pela inflação). Deixe 0 para manter o mesmo aporte ao longo de todos os anos.">
+                                    ?
+                                </span>
+                            </span>
+                            <small class="text-muted fw-normal">reajuste a cada 12 meses</small>
+                        </label>
+                        <div class="input-group">
+                            <input type="text" inputmode="decimal" class="form-control form-control-lg fw-semibold" id="annualIncrease" name="annualIncrease" value="<?php echo ($annualIncreaseVal > 0) ? str_replace('.', ',', (string)$annualIncreaseVal) : '0'; ?>" placeholder="0" autocomplete="off">
+                            <span class="input-group-text">% a.a.</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1 mt-2">
+                            <span class="preset-badge" data-preset-annual-increase="0">0% (Fixo)</span>
+                            <span class="preset-badge" data-preset-annual-increase="5">+5% a.a.</span>
+                            <span class="preset-badge" data-preset-annual-increase="10">+10% a.a.</span>
+                            <span class="preset-badge" data-preset-annual-increase="<?php echo htmlspecialchars((string)$ipcaRate); ?>" id="presetIpcaIncreaseBadge"><i class="bi bi-graph-up-arrow text-warning me-1"></i>IPCA (<?php echo number_format($ipcaRate, 2, ',', '.'); ?>%)</span>
                         </div>
                     </div>
 
@@ -779,6 +808,9 @@ require_once __DIR__ . '/includes/header.php';
                 </li>
                 <li class="list-group-item bg-transparent px-0 py-2">
                     <strong>Valor mensal:</strong> a quantia recorrente (aporte mensal) que você pretende investir fielmente todos os meses.
+                </li>
+                <li class="list-group-item bg-transparent px-0 py-2">
+                    <strong>Aumento anual do aporte:</strong> percentual de reajuste aplicado ao aporte mensal a cada 12 meses (ex.: 5% ou a inflação IPCA), simulando aumentos salariais ou progressão de renda ao longo dos anos.
                 </li>
                 <li class="list-group-item bg-transparent px-0 py-2">
                     <strong>Taxa de juros:</strong> informe a rentabilidade esperada e selecione se a taxa é <strong>anual</strong> ou <strong>mensal</strong>. Lembre-se: investimentos como taxa Selic, CDBs, LCIs e Poupança são cotados e divulgados tradicionalmente ao ano.
